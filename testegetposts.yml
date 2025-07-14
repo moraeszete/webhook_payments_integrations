@@ -1,0 +1,12 @@
+config:
+  target: "http://localhost:8100/tabsLayout/social"
+  phases:
+    - duration: 60
+      arrivalRate: 10000
+  defaults:
+    headers:
+      User-Agent: "Artillery"
+scenarios:
+  - flow:
+      - get:
+          url: "/"
