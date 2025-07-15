@@ -13,7 +13,7 @@ async function connect () {
       username: global.redisConfig?.username || '',
       password: global.redisConfig?.password || ''
     })
-  global.redis = redis
+  
   try {
     redis.ping() === "PONG"       
 
@@ -21,6 +21,7 @@ async function connect () {
     // O redis.options.db não atualiza logo depois de selecionar
     // porem se prom === 'OK' o redis connectou no banco corretamente
     if(prom === 'OK')return console.warn(`Redis on: ${redis.options.host}:${redis.options.port}[db${global.configs.redisDbNumber}]`)
+    global.redis = redis
   } catch (error) {
     return console.log('Error selecting Redis:', error.message)    
   }

@@ -1,6 +1,6 @@
 const { MongoClient, ObjectId } = require("mongodb")
 
-const mongoUri = global.configs.mongo.ip
+const mongoUri = process.env.MONGO_URI 
 const dbName = process.env.MONGO_DATABASE
 let db
 

@@ -5,13 +5,16 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 const fs = require('fs')
 let server;
 
-( async() => {
+const configServer = require('./config/configServer')
+// Importing the custom express configuration
+async function main() {
+  await configServer()
   const app = require('./config/custom-express')
 
-  if (process.env.SERVER_MODE === 'local') {
+  if (process.env.NODE_ENV === 'local') {
     app.proxy = true
     server = app.listen(process.env.PORT, () => {
-      console.log(`Servidor HTTP na porta ${process.env.configs.PORT} - ${new Date().toLocaleDateString()}`)
+      console.log(`Servidor HTTP na porta ${process.env.PORT} - ${new Date()}`)
     })
     return
   }
@@ -28,6 +31,8 @@ let server;
   server.listen(process.env.PORT, () => {
     console.log(`Servidor HTTPS na porta: ${process.env.PORT}`)
   })
-}) ()
+}
+
+main()
 
 module.exports = server;
