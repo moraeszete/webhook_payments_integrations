@@ -1,14 +1,15 @@
 const Router = require('@koa/router');
-global.router = new Router()
+const router = new Router();
 
-// require('./files/payments')()
-// require('./files/desktop/social')()
-// require('./files/desktop/solicitations')()
-// require('./files/desktop/pedagogical')()
-// require('./files/desktop/reports')()
-// require('./files/notifications')()
-// require('./files/scripts')()
+// importing routes
+const asaas = require('../controllers/asaas/hook.js');
+const stripe = require('../controllers/stripe/hook.js');
 
-global.router.post('/asaas', require('../controllers/asaas/hookTreatment'))
+// setting up routes
+router.post('/asaas', asaas);
+router.post('/stripe', stripe);
 
-module.exports = global.router
+// Make router globally available (maintaining compatibility)
+global.router = router;
+
+module.exports = router;

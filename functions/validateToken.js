@@ -1,11 +1,10 @@
-const bcrypt = require('bcrypt');
-
+const bcrypt = require('bcrypt')
 
 module.exports = async (tokenValue) => {
   if (!tokenValue) {
     return { error: true, message: "Token não enviado" };
   }
-
+  
   // Divide o token em hash e tokenId
   const [secret, tokenId] = tokenValue.split(":");
   if (!secret || !tokenId) {

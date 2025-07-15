@@ -1,8 +1,12 @@
 function pad (n) {
   return +n < 10 ? '0' + +n : +n
 }
-
 module.exports = {
+  /*
+   *  @file createTimestamps.js
+   *  @description This file contains functions to create and format timestamps.
+   *  use create for creating a timestamp object.
+  */
   create: async function () {
     const createdAt = new Date()
     const createdAtOnlyDate = createdAt.toLocaleDateString('pt-br')

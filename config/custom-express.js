@@ -1,14 +1,14 @@
 const Koa = require("koa");
-const app = new Koa();
 const cors = require("@koa/cors");
 const bodyParser = require("koa-bodyparser");
 
-const validateToken = require("../functions/validateToken");
+const app = new Koa();
 
 app.use(cors());
 app.use(bodyParser());
 
 const router = require("../routes");
+const validateToken = require("../functions/validateToken");
 
 app.use(async (ctx, next) => {
   ctx.set(

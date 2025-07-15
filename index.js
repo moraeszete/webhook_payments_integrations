@@ -1,40 +1,33 @@
 const path = require('path')
+// This file is part of the Webhook Template project.
 const dotenv = require('dotenv')
+dotenv.config({ path: path.join(__dirname, '.env') })
 const fs = require('fs')
-dotenv.config({ path: path.join(__dirname, '.env')})
-const configServer = require('./config/configServer')
-let server
+let server;
 
-async function createServer() {
-  await configServer()
-  const today = new Date()
+( async() => {
   const app = require('./config/custom-express')
-  let server
-  let serverConfigured
-  if (global.configs.env === 'local') {
-    serverConfigured = 'http'
+
+  if (process.env.SERVER_MODE === 'local') {
     app.proxy = true
-    server = app.listen(global.configs.serverPort, () => {
-      console.log(`Servidor HTTP na porta ${global.configs.serverPort} - ${today}`)
+    server = app.listen(process.env.PORT, () => {
+      console.log(`Servidor HTTP na porta ${process.env.configs.PORT} - ${new Date().toLocaleDateString()}`)
     })
+    return
   }
-  else {
-    serverConfigured = 'https'
-    server = require('https').createServer(
-      {
-        key: fs.readFileSync(path.join(__dirname, `../../certificates/${global.configs.certs.key}`)),
-        cert: fs.readFileSync(path.join(__dirname, `../../certificates/${global.configs.certs.cert}`)),
-        ca: [
-          fs.readFileSync(path.join(__dirname, `../../certificates/${global.configs.certs.caBundle}`)),
-          fs.readFileSync(path.join(__dirname, `../../certificates/${global.configs.certs.caCertificateServices}`)),
-        ]
-      },
-      app.callback())
-    server.listen(global.configs.serverPort, () => {
-      console.log(`Servidor HTTPS na porta: ${global.configs.serverPort}`)
-    })
-  }
-}
-createServer()
+  server = require('https').createServer(
+    {
+      key: fs.readFileSync(path.join(__dirname, `../../certificates/${process.env.CERTS.KEY}`)),
+      cert: fs.readFileSync(path.join(__dirname, `../../certificates/${process.env.CERTS.CERTIFICATION}`)),
+      ca: [
+        fs.readFileSync(path.join(__dirname, `../../certificates/${process.env.CERTS.CABUNDLE}`)),
+        fs.readFileSync(path.join(__dirname, `../../certificates/${process.env.CERTS.CACERTIFICATESERVICES}`)),
+      ]
+    },
+    app.callback())
+  server.listen(process.env.PORT, () => {
+    console.log(`Servidor HTTPS na porta: ${process.env.PORT}`)
+  })
+}) ()
 
 module.exports = server;
