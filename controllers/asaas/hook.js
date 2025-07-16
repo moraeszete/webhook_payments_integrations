@@ -1,7 +1,7 @@
 
 module.exports = async (ctx) => {
   console.time("Start");
-  const collQueue = await global.mongo.config(process.env.ASAAS_QUEUE);
+  const collQueue = await global.mongo.collection("asaas_queue")
 
   const params = {
     event: ctx.body.event,

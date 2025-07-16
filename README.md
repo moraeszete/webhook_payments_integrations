@@ -124,7 +124,7 @@ O sistema resolve o problema de processamento confiável de webhooks de pagament
 
 ### Fluxo de Dados
 
-1. **Recepção**: Webhook recebe evento via POST `/asaas` ou `/stripe`
+1. **Recepção**: Webhook recebe evento via POST `/asaas` ou `/stripe`, assim por diante...
 2. **Validação**: Sistema valida token de autenticação
 3. **Idempotência**: Redis verifica se evento já foi processado
 4. **Armazenamento**: Evento é salvo na fila MongoDB para processamento

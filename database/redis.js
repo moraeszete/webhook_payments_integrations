@@ -1,22 +1,21 @@
-const { redisover } = require('redisover')
-// cons
-
-// const Redis = require("ioredis").Redis;
+const RedisOver = require('redisover')
+// RedisOver is made to aceppt null hosts or ports
 let redis;
-let mongoDb = process.env.MONGO_DATABASE;
 
 async function connect () {
-  redis = redisover(
+  redis = new RedisOver(
     {
-      host: global.redisConfig?.host || '100.64.92.6',
-      port: global.redisConfig?.port || '6379',
-      username: global.redisConfig?.username || '',
-      password: global.redisConfig?.password || ''
-    })
+      prefix: process.MONGO_DATABASE,
+      options: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        // username: global.redisConfig?.username || '',
+        // password: global.redisConfig?.password || ''
+      }
+    }
+  )
   
   try {
-    redis.ping() === "PONG"       
-
     const prom = await redis.select(global.configs.redisDbNumber || 0)
     // O redis.options.db não atualiza logo depois de selecionar
     // porem se prom === 'OK' o redis connectou no banco corretamente
