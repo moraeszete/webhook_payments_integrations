@@ -39,7 +39,7 @@ This is a **high-performance enterprise webhook system** built with **Node.js**,
 - **Runtime**: Node.js (CommonJS)
 - **Framework**: Koa.js
 - **Database**: MongoDB 6.8.0
-- **Cache**: Redis (ioredis 5.6.0)
+- **Cache**: Redis with RedisOver 1.1.1
 - **Security**: bcrypt, crypto-js
 - **Dev Tools**: TypeScript, nodemon
 
@@ -53,13 +53,42 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your Redis and MongoDB settings
+
+# Create authentication tokens
+node -e "require('./scripts/createToken').auto()"
 
 # Run development
 npm run dev
 
 # Run production
 npm start
+```
+
+### 🔑 Token Management
+
+The project includes an intelligent token creation system:
+
+```bash
+# Auto-detect database and create token
+node -e "require('./scripts/createToken').auto()"
+
+# Output example:
+# {
+#   "success": true,
+#   "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
+#   "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
+#   "database": "MongoDB",
+#   "savedToDatabase": true
+# }
+```
+
+**Environment Variables:**
+```env
+CREATE_IN_DB=true
+MONGO_URI=mongodb://localhost:27017
+MONGO_DATABASE=webhook
+SUPPLIERS_TOKENS=suppliers_tokens
 ```
 
 ### 📡 API Endpoints
@@ -124,7 +153,7 @@ O sistema resolve o problema de processamento confiável de webhooks de pagament
 
 ### Fluxo de Dados
 
-1. **Recepção**: Webhook recebe evento via POST `/asaas` ou `/stripe`, assim por diante...
+1. **Recepção**: Webhook recebe evento via POST `/asaas` ou `/stripe`, e assim por diante...
 2. **Validação**: Sistema valida token de autenticação
 3. **Idempotência**: Redis verifica se evento já foi processado
 4. **Armazenamento**: Evento é salvo na fila MongoDB para processamento
@@ -134,13 +163,15 @@ O sistema resolve o problema de processamento confiável de webhooks de pagament
 
 #### 🔐 **Sistema de Autenticação**
 - Validação via headers `asaas-access-token` e `stripe-access-token`
-- Tokens configurados dinamicamente via base de dados
+- Tokens configurados dinamicamente via banco de dados
 - Middleware de segurança em todas as rotas
 
 #### ⚡ **Cache Redis (Idempotência)**
-- Armazena chaves únicas por evento (eventId + path)
+- Utiliza **RedisOver** para funcionalidades avançadas
+- Armazena chaves únicas por evento (eventId + path) 
 - TTL configurável (padrão: 24h / 86400s)
 - Previne processamento duplicado de eventos
+- Configuração dinâmica entre ambientes local e produção
 
 #### 💾 **Persistência MongoDB**
 - Fila de eventos para processamento assíncrono
@@ -178,10 +209,12 @@ webhook-template/
 │
 ├── 📂 functions/              # Funções utilitárias
 │   ├── createTimestamps.js   # Geração de timestamps
-│   ├── createToken.js        # Criação de tokens
 │   ├── getServerPort.js      # Configuração de porta
 │   ├── getServiceConfigs.js  # Configurações de serviços
 │   └── validateToken.js      # Validação de tokens
+│
+├── 📂 scripts/               # Scripts de automação
+│   └── createToken.js        # Sistema avançado de criação de tokens
 │
 └── 📂 routes/                # Definição de rotas
     └── index.js              # Roteador principal
@@ -197,7 +230,7 @@ webhook-template/
 
 ### **Bancos de Dados**
 - **MongoDB** (v6.8.0) - Banco NoSQL para persistência
-- **Redis** (ioredis v5.6.0) - Cache em memória para idempotência
+- **Redis** com **RedisOver** (v1.1.1) - Cache em memória para idempotência e controle de estado
 
 ### **Segurança & Autenticação**
 - **bcrypt/bcryptjs** - Hash de senhas
@@ -209,6 +242,7 @@ webhook-template/
 - **uid-generator** (v2.0.0) - Geração de IDs únicos
 - **sharp** (v0.32.6) - Processamento de imagens
 - **fluent-ffmpeg** (v2.1.3) - Processamento de vídeo
+- **redisover** (v1.1.1) - Wrapper avançado para Redis
 
 ### **Desenvolvimento**
 - **TypeScript** (v5.8.2) - Tipagem estática
@@ -234,6 +268,27 @@ const asaas = require('../controllers/asaas/hook.js');
 
 // Exportação
 module.exports = router;
+```
+
+### **RedisOver Integration**
+O projeto utiliza **RedisOver v1.1.1** que oferece:
+- 🔧 **Configuração simplificada** para diferentes ambientes
+- 🚀 **Métodos avançados** como `parseKey()` para idempotência
+- 🛡️ **Controle de ambiente** automático (local vs produção)
+- 📦 **Prefixos automáticos** para organização de chaves
+- ⚡ **Performance otimizada** para aplicações Node.js
+
+```javascript
+// Exemplo de uso do RedisOver
+const result = await global.redis.parseKey('/webhook', {
+  provider: 'asaas',
+  eventId: 'evt_123'
+}, 86400, webhookData);
+
+if (result.keyValue) {
+  // Evento já processado - idempotência garantida
+  return { message: "Event already processed" };
+}
 ```
 
 ### **Configuração Alternativa (ES6 Modules)**
@@ -265,12 +320,12 @@ export default router;
 - **Simplicidade**: API minimalista com foco na funcionalidade
 
 ### **🔧 Características Técnicas**
-- **Idempotência Garantida**: Eventos duplicados são automaticamente ignorados
+- **Idempotência Garantida**: Eventos duplicados são automaticamente ignorados via RedisOver
 - **Processamento Assíncrono**: Fila MongoDB para processamento em background
-- **Cache Inteligente**: Redis com TTL configurável para otimização
-- **Multi-ambiente**: Suporte automático HTTP (dev) e HTTPS (prod)
+- **Cache Inteligente**: RedisOver com TTL configurável e controle de ambiente
+- **Multi-ambiente**: Configuração automática local (sem autenticação Redis) e produção (com credenciais)
 - **Monitoramento**: Sistema de logs integrado para debugging
-- **Configuração Dinâmica**: Variáveis de ambiente e configuração externa
+- **Configuração Dinâmica**: Variáveis de ambiente organizadas por seções
 
 ## ⚙️ Como Funciona
 
@@ -297,11 +352,13 @@ export default router;
 
 ### **3. Verificação de Idempotência**
 ```javascript
-// Gera chave única por provedor
-const key = await redis.createKey('/asaas', { 
+// RedisOver gera chave única por provedor com prefix configurável
+const key = await redis.parseKey('/asaas', { 
   event: 'PAYMENT_RECEIVED', 
   eventId: 'unique-event-id' 
 });
+
+// Chave resultante: "webhooks:/asaas:event_PAYMENT_RECEIVED:eventId_unique-event-id"
 ```
 
 ### **4. Processamento**
@@ -331,7 +388,7 @@ const key = await redis.createKey('/asaas', {
 
 ### **1. Clonagem e Dependências**
 ```bash
-git clone [repositorio]
+git clone [repositório]
 cd webhook-template
 npm install
 ```
@@ -339,30 +396,168 @@ npm install
 ### **2. Configuração de Ambiente**
 Crie arquivo `.env` baseado no `.env.example`:
 ```env
-# Ambiente
+# =================================
+# ENVIRONMENT CONFIGURATION
+# =================================
+
+# Server Configuration
 NODE_ENV=local  # ou 'production'
 PORT=3000
+SERVER_MODE=local  # ou 'production' para HTTPS
+
+# =================================
+# DATABASE CONFIGURATION
+# =================================
 
 # MongoDB
-MONGO_DATABASE=webhook_db
-ASAAS_QUEUE={"db": "webhook_db", "coll": "asaas_events"}
-STRIPE_QUEUE={"db": "webhook_db", "coll": "stripe_events"}
+MONGO_DATABASE=webhooks
 
-# Redis (configurado dinamicamente via getServiceConfigs)
-# Valores padrão: host=100.64.92.6, port=6379
+# Redis (RedisOver Configuration)
+REDIS_HOST=localhost          # ou seu host Redis
+REDIS_PORT=6379              # porta do Redis
+REDIS_USERNAME=your-username # se necessário
+REDIS_PASSWORD=your-password # se necessário
+REDIS_DB_NUMBER=0           # número do banco Redis
 
-# Certificados SSL (apenas produção)
-SERVER_MODE=local  # ou 'production'
+# =================================
+# QUEUES CONFIGURATION
+# =================================
+SUPPLIERS_TOKENS=suppliers_tokens
+ASAAS_QUEUE=asaas_queue
+STRIPE_QUEUE=stripe_queue
+TWILIO_QUEUE=twilio_queue
+
+# =================================
+# SECURITY CONFIGURATION
+# =================================
+SECRET_KEY=your-secret-key-here
+
+# Token Creation Configuration
+CREATE_IN_DB=true                    # Set to true to save tokens in database
+
+# =================================
+# SSL CERTIFICATES (Production Only)
+# =================================
 CERTS_KEY=server.key
 CERTS_CERTIFICATION=server.crt
 CERTS_CABUNDLE=ca-bundle.crt
 CERTS_CACERTIFICATESERVICES=ca-services.crt
 ```
 
-### **3. Configuração de Tokens**
-Os tokens são configurados dinamicamente via função `getServiceConfigs()` que busca configurações de um serviço externo.
+### **3. Token Creation and Management**
 
-### **4. Scripts Disponíveis**
+This project includes an advanced token creation system that automatically detects your database configuration and creates authentication tokens.
+
+#### **Token Creation Script**
+The `scripts/createToken.js` module provides multiple ways to create authentication tokens:
+
+```bash
+# Auto-detect database and create token
+node -e "require('./scripts/createToken').auto()"
+
+# Force MongoDB token creation
+node -e "require('./scripts/createToken').mongo()"
+
+# Force SQL token creation (future implementation)
+node -e "require('./scripts/createToken').sql()"
+
+# Generate token in memory only
+node -e "require('./scripts/createToken').generate()"
+
+# Direct execution
+node scripts/createToken.js
+```
+
+#### **Environment Variables for Token Creation**
+Add these to your `.env` file:
+
+```env
+# Token Creation Configuration
+CREATE_IN_DB=true                    # Set to true to save tokens in database
+MONGO_URI=mongodb://localhost:27017  # MongoDB connection string
+MONGO_DATABASE=webhook               # Database name
+SUPPLIERS_TOKENS=suppliers_tokens    # Collection name for tokens
+
+# Optional SQL configuration (for future use)
+# SQL_HOST=localhost
+# SQL_DATABASE=webhook
+# SQL_USER=your_username
+# SQL_PASSWORD=your_password
+```
+
+#### **How Token Creation Works**
+1. **Auto-Detection**: Script automatically detects which database is configured
+2. **Document Creation**: Creates a new document in MongoDB with bcrypt-hashed token
+3. **ID Generation**: Returns the MongoDB ObjectId for the created token
+4. **Token Format**: Returns token in format `secret:objectId` (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
+
+#### **Token Document Structure**
+```javascript
+{
+  _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
+  token: "$2b$08$hashedTokenValue...",  // bcrypt hash
+  createdAt: Date,
+  updatedAt: Date,
+  active: true
+}
+```
+
+### **4. Configuração Legada de Tokens**
+Para compatibilidade com versões anteriores, os tokens ainda podem ser configurados dinamicamente via função `getServiceConfigs()` que busca configurações de um serviço externo.
+
+#### **Sistema Avançado de Criação de Tokens**
+
+O projeto inclui um sistema inteligente de criação de tokens que detecta automaticamente sua configuração de banco de dados:
+
+```bash
+# Auto-detecta o banco e cria token
+node -e "require('./scripts/createToken').auto()"
+
+# Força criação no MongoDB
+node -e "require('./scripts/createToken').mongo()"
+
+# Força criação no SQL (implementação futura)
+node -e "require('./scripts/createToken').sql()"
+
+# Gera token apenas na memória
+node -e "require('./scripts/createToken').generate()"
+
+# Execução direta
+node scripts/createToken.js
+```
+
+#### **Como Funciona o Sistema de Tokens**
+1. **Auto-Detecção**: O script detecta automaticamente qual banco está configurado
+2. **Criação de Documento**: Cria um novo documento no MongoDB com token hasheado via bcrypt
+3. **Geração de ID**: Retorna o ObjectId do MongoDB para o token criado
+4. **Formato do Token**: Retorna token no formato `secret:objectId` (ex: `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
+
+#### **Estrutura do Documento de Token**
+```javascript
+{
+  _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
+  token: "$2b$08$valorHasheado...",  // hash bcrypt
+  createdAt: Date,
+  updatedAt: Date,
+  active: true
+}
+```
+
+#### **Exemplo de Output**
+```json
+{
+  "success": true,
+  "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
+  "secret": "abc123def",
+  "hashSecret": "$2b$08$...",
+  "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
+  "database": "MongoDB",
+  "savedToDatabase": true,
+  "timestamp": "2025-07-18T..."
+}
+```
+
+### **5. Scripts Disponíveis**
 ```bash
 # Desenvolvimento (com auto-reload)
 npm run dev
@@ -424,20 +619,33 @@ stripe-access-token: seu-token-aqui
 
 ### **Monitoramento e Logs**
 O sistema inclui logs detalhados para:
-- Requisições recebidas
-- Tempo de processamento
-- Eventos de idempotência
-- Erros e exceções
+- Requisições recebidas por rota
+- Tempo de processamento dos webhooks
+- Conexão e status do Redis/RedisOver
+- Eventos de idempotência (duplicados detectados)
+- Erros e exceções com stack trace
+- Status de conexão MongoDB
 
 ## 🤝 Contribuição
 
-### **Estrutura para Novos Recursos**
-1. **Controllers**: Adicione lógica em `controllers/[provider]/`
-2. **Rotas**: Registre em `routes/index.js`
-3. **Funções**: Utilitários em `functions/`
-4. **Validação**: Sempre inclua validação de tokens
-5. **Logs**: Use sistema de logs integrado
-6. **Testes**: Adicione testes apropriados
+### **Estrutura de Ambiente**
+```javascript
+// Desenvolvimento (local) - Redis sem autenticação
+const config = {
+  prefix: process.env.MONGO_DATABASE,
+  // options comentadas para ambiente local
+}
+
+// Produção - Redis com credenciais completas
+if (process.env.NODE_ENV === 'production') {
+  config.options = {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+    username: process.env.REDIS_USERNAME,
+    password: process.env.REDIS_PASSWORD
+  }
+}
+```
 
 ### **Adicionando Novo Provedor**
 ```javascript

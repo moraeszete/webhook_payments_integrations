@@ -9,7 +9,14 @@
     "dev": "nodemon index.js",
     "test": "echo \"No tests specified\" && exit 0"
   },
-  "keywords": ["webhook", "nodejs", "redis", "mongodb", "asaas", "stripe"],
+  "keywords": [
+    "webhook",
+    "nodejs",
+    "redis",
+    "mongodb",
+    "asaas",
+    "stripe"
+  ],
   "author": "Lucas Silva de Moraes ",
   "license": "MIT",
   "dependencies": {
@@ -36,7 +43,7 @@
     "mongodb": "^6.8.0",
     "node-fetch": "^2.6.2",
     "promise-mysql": "^5.2.0",
-    "redisover": "^1.0.9",
+    "redisover": "^1.1.1",
     "sharp": "^0.32.6",
     "twilio": "^5.5.0",
     "uid-generator": "^2.0.0"

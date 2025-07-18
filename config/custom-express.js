@@ -34,19 +34,20 @@ app.use(async (ctx, next) => {
   // const mapping = exceptionRoutes.includes(ctx.path)
   if (headerIsValid) {
     const tokenValue = ctx.headers[headerIsValid];
-    const isValid = await validateToken(tokenValue);
-    if (!isValid) {
+    const validationResult = await validateToken(tokenValue);
+    if (validationResult.error) {
       ctx.status = 401;
       ctx.body = {
         error: true,
-        message: "Token de acesso não inválido",
+        message: "Token de acesso inválido",
       }
+      return;
     }
   } else if (!headerIsValid) {
     ctx.status = 401;
     ctx.body = {
       error: true,
-      message: "Token de acesso não inválido",
+      message: "Token de acesso não fornecido",
     }
   }
   
