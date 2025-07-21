@@ -13,6 +13,7 @@ async function connect() {
 connect()
 
 module.exports = {
+  db,
   toObjectId(_id) {
     return new ObjectId(_id)
   },
