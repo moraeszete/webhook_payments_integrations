@@ -13,15 +13,7 @@ async function connect() {
 connect()
 
 module.exports = {
-  config: async (obj) => {
-    if (obj.db) {
-      let newDb = db
-      newDb.db(obj.db)
-      return newDb.collection(obj.coll)
-    }
-    return db.collection(obj)
-  },
-  ObjectId (_id) {
+  toObjectId(_id) {
     return new ObjectId(_id)
-  }
+  },
 }
