@@ -242,6 +242,8 @@ function generate() {
   if (process.argv.includes('-e')) {
     console.log(JSON.stringify(completeObject, null, 2));
   }
+  console.warn('Token generated in memory only');
+  console.warn(JSON.stringify(completeObject, null, 2));
   return completeObject;
 }
 

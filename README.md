@@ -1,54 +1,45 @@
-# 🚀 Webhook Template - Node.js/Redis/MongoDB
+# Webhook Payments Integration System
 
-[🇺🇸 **English**](#-english-documentation) | [🇧🇷 **Português**](#-documentação-em-português)
+A high-performance enterprise webhook system built with Node.js, Redis, and MongoDB for processing payment platform webhooks from Asaas, Stripe, and other providers.
 
----
+## Overview
 
-## 🇺🇸 English Documentation
+This project provides a robust webhook processing system designed specifically for payment platforms. It ensures idempotency, high availability, and efficient processing of financial events with enterprise-grade security and scalability.
 
-### 🌐 Project Overview
+## Key Features
 
-This is a **high-performance enterprise webhook system** built with **Node.js**, **Redis**, and **MongoDB**. The project was specifically designed to process webhooks from payment platforms like **Asaas** and **Stripe**, ensuring idempotency, high availability, and efficient processing of financial events.
+- **Idempotency**: Prevents duplicate event processing using Redis
+- **High Performance**: Redis-powered caching and optimization  
+- **Multi-Provider Support**: Compatible with Asaas, Stripe, and extensible to other providers
+- **Scalable Architecture**: MongoDB queues for background processing
+- **Enterprise Security**: Token-based authentication system
+- **Production Ready**: HTTP/HTTPS support with SSL certificates
 
-### 🎯 Key Features
-
-- ✅ **Idempotency**: Prevents duplicate event processing
-- ✅ **High Performance**: Redis-powered caching and optimization
-- ✅ **Multi-Provider**: Support for Asaas and Stripe webhooks
-- ✅ **Scalable Architecture**: Vertical scaling with MongoDB queues
-- ✅ **Enterprise Security**: Token-based authentication
-- ✅ **Production Ready**: HTTP/HTTPS support with SSL certificates
-
-### 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Payment APIs   │───▶│  Webhook Server │───▶│   MongoDB       │
-│ (Asaas/Stripe)  │    │   (Node.js)     │    │   (Queues)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                       ┌─────────────────┐
-                       │     Redis       │
-                       │  (Idempotency)  │
-                       └─────────────────┘
+Payment APIs     →    Webhook Server    →    MongoDB
+(Asaas/Stripe)         (Node.js)              (Queues)
+                            ↓
+                        Redis
+                    (Idempotency)
 ```
 
-### 🛠️ Tech Stack
+## Tech Stack
 
 - **Runtime**: Node.js (CommonJS)
 - **Framework**: Koa.js
 - **Database**: MongoDB 6.8.0
 - **Cache**: Redis with RedisOver 1.1.1
 - **Security**: bcrypt, crypto-js
-- **Dev Tools**: TypeScript, nodemon
+- **Development**: TypeScript, nodemon
 
-### 🚀 Quick Start
+## Quick Start
 
 ```bash
-# Clone and install
+# Clone and install dependencies
 git clone [repository-url]
-cd webhook-template
+cd webhook_payments_integrations
 npm install
 
 # Configure environment
@@ -58,14 +49,81 @@ cp .env.example .env
 # Create authentication tokens
 node -e "require('./scripts/createToken').auto()"
 
-# Run development
+# Run in development mode
 npm run dev
 
-# Run production
+# Run in production
 npm start
 ```
 
-### 🔑 Token Management
+## Project Structure
+
+```
+webhook_payments_integrations/
+├── index.js                   # Application entry point
+├── package.json              # Dependencies and npm configuration
+├── README.md                 # Project documentation
+├── .env.example              # Environment configuration template
+│
+├── config/                   # System configuration
+│   ├── configServer.js       # Main server configuration
+│   └── custom-express.js     # Koa.js custom configuration
+│
+├── controllers/              # Business logic controllers
+│   ├── asaas/
+│   │   └── hook.js          # Asaas webhook processing
+│   └── stripe/
+│       └── hook.js          # Stripe webhook processing
+│
+├── database/                 # Database connections
+│   ├── mongo.js             # MongoDB configuration
+│   └── redis.js             # Redis configuration
+│
+├── functions/                # Utility functions
+│   ├── createTimestamps.js  # Timestamp generation
+│   ├── getServerPort.js     # Port configuration
+│   └── validateToken.js     # Token validation
+│
+├── scripts/                 # Automation scripts
+│   └── createToken.js       # Token creation system
+│
+└── routes/                  # Route definitions
+    └── index.js             # Main router
+```
+
+## Environment Configuration
+
+Create a `.env` file based on `.env.example`:
+
+```env
+# Server Configuration
+NODE_ENV=local
+PORT=3000
+SERVER_MODE=local
+
+# Security
+SECRET_KEY=your-secret-key-here
+
+# MongoDB Configuration
+MONGO_DATABASE=webhooks
+MONGO_URI=mongodb://localhost:27017
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_USERNAME=your-redis-username
+REDIS_PASSWORD=your-redis-password
+
+# Token Management
+CREATE_IN_DB=true
+SUPPLIERS_TOKENS=suppliers_tokens
+
+# Queue Collections
+ASAAS_QUEUE=asaas_queue
+STRIPE_QUEUE=stripe_queue
+```
+
+## Token Management
 
 The project includes an intelligent token creation system:
 
@@ -74,29 +132,219 @@ The project includes an intelligent token creation system:
 node -e "require('./scripts/createToken').auto()"
 
 # Output example:
-# {
-#   "success": true,
-#   "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
-#   "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
-#   "database": "MongoDB",
-#   "savedToDatabase": true
-# }
+{
+  "success": true,
+  "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
+  "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
+  "database": "MongoDB",
+  "savedToDatabase": true
+}
 ```
 
-**Environment Variables:**
-```env
-CREATE_IN_DB=true
-MONGO_URI=mongodb://localhost:27017
-MONGO_DATABASE=webhook
-SUPPLIERS_TOKENS=suppliers_tokens
-```
+## API Endpoints
 
-### 📡 API Endpoints
+### Webhook Endpoints
 
 ```http
 POST /asaas
 POST /stripe
 ```
+
+Both endpoints require authentication via headers:
+- `asaas-access-token` for Asaas webhooks
+- `stripe-access-token` for Stripe webhooks
+
+### Request/Response Examples
+
+**Asaas Webhook Request:**
+```http
+POST /asaas
+Content-Type: application/json
+asaas-access-token: your-token-here
+
+{
+  "event": "PAYMENT_RECEIVED",
+  "id": "evt_123456789",
+  "dateCreated": "2025-01-15 10:30:00",
+  "payment": {
+    "id": "pay_123456789",
+    "value": 100.00,
+    "status": "RECEIVED"
+  }
+}
+```
+
+**Success Response:**
+```json
+{
+  "error": false,
+  "message": "Event created!"
+}
+```
+
+**Duplicate Event Response:**
+```json
+{
+  "error": false,
+  "message": "Event received!"
+}
+```
+
+## How It Works
+
+### 1. Webhook Reception
+The system receives webhook events via POST requests to provider-specific endpoints.
+
+### 2. Security Validation
+- Validates authentication token in request headers
+- Checks token against stored credentials in database
+
+### 3. Idempotency Check
+Uses Redis to prevent duplicate processing:
+```javascript
+// Check if event already exists
+const existingEvent = await global.redis.get(ctx.path);
+
+if (existingEvent) {
+  // Return duplicate response
+  return { message: "Event received!" };
+}
+```
+
+### 4. Event Processing
+- Stores event metadata in Redis with TTL (24 hours)
+- Inserts complete event data into MongoDB queue
+- Returns immediate confirmation to webhook sender
+
+### 5. Response Handling
+- **New Event**: `200 OK` with "Event created!"
+- **Duplicate**: `200 OK` with "Event received!"
+- **Error**: `500` with error details
+
+## Redis Integration with RedisOver
+
+The project uses **RedisOver v1.1.1** for enhanced Redis functionality:
+
+### Key Features
+- Simplified configuration for different environments
+- JSON object storage with `setJSON()` and `getJSON()`
+- Automatic key prefixing for organization
+- TTL management with `expire()`
+- Environment-specific connection handling
+
+### Configuration
+```javascript
+// Development (local) - no authentication
+const config = {
+  prefix: process.env.MONGO_DATABASE
+}
+
+// Production - with Redis credentials
+if (process.env.SERVER_MODE !== 'local') {
+  config.options = {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+    username: process.env.REDIS_USERNAME,
+    password: process.env.REDIS_PASSWORD
+  }
+}
+```
+
+### Usage Example
+```javascript
+// Store event with TTL
+await global.redis.setJSON(ctx.path, params);
+await global.redis.expire(ctx.path, 86400);
+
+// Check for existing event
+const existingEvent = await global.redis.get(ctx.path);
+```
+
+## Development Scripts
+
+```bash
+# Development with auto-reload
+npm run dev
+
+# Production
+npm start
+
+# Run tests
+npm test
+```
+
+## Database Collections
+
+### MongoDB Collections
+- `suppliers_tokens` - Authentication tokens
+- `asaas_queue` - Asaas webhook events queue
+- `stripe_queue` - Stripe webhook events queue
+
+### Redis Keys
+- Format: `{prefix}:{endpoint_path}`
+- Example: `webhooks:/asaas`
+- TTL: 86400 seconds (24 hours)
+
+## Contributing
+
+### Adding New Payment Provider
+
+1. **Create Controller**: Add new file in `controllers/newprovider/hook.js`
+2. **Add Route**: Register route in `routes/index.js`
+3. **Configure Authentication**: Add token header to validation middleware
+4. **Update Documentation**: Document the new provider
+
+### Code Standards
+- Use `async/await` for asynchronous operations
+- Implement consistent error handling
+- Follow CommonJS module system
+- Keep functions focused and small
+- Document significant changes
+
+### Commit Format
+```bash
+feat: add support for XYZ provider
+fix: resolve Stripe token validation issue
+docs: update installation documentation
+refactor: improve route structure
+```
+
+## Security Considerations
+
+- All tokens are bcrypt hashed before storage
+- Environment variables for sensitive configuration
+- HTTPS support for production environments
+- Input validation on all webhook endpoints
+- Rate limiting considerations for production deployment
+
+## Production Deployment
+
+### SSL Configuration
+For HTTPS in production, configure certificates:
+```env
+CERTS_KEY=server.key
+CERTS_CERTIFICATION=server.crt
+CERTS_CABUNDLE=ca-bundle.crt
+CERTS_CACERTIFICATESERVICES=ca-services.crt
+```
+
+### Performance Optimization
+- Redis connection pooling
+- MongoDB connection optimization
+- Request/response compression
+- Monitoring and logging
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Author
+
+**Lucas Silva de Moraes** - Backend Developer
+
+---
+
+**Built for reliable and performant webhook processing**
 
 Both endpoints require authentication via headers:
 - `asaas-access-token` for Asaas webhooks
