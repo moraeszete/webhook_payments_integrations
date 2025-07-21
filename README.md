@@ -1,5 +1,11 @@
 # Webhook Payments Integration System
 
+[🇺🇸 **English Documentation**](#english-documentation) | [🇧🇷 **Documentação em Português**](#documentação-em-português)
+
+---
+
+## English Documentation
+
 A high-performance enterprise webhook system built with Node.js, Redis, and MongoDB for processing payment platform webhooks from Asaas, Stripe, and other providers.
 
 ## Overview
@@ -20,9 +26,11 @@ This project provides a robust webhook processing system designed specifically f
 ```
 Payment APIs     →    Webhook Server    →    MongoDB
 (Asaas/Stripe)         (Node.js)              (Queues)
+
                             ↓
-                        Redis
-                    (Idempotency)
+
+                          Redis
+                      (Idempotency)
 ```
 
 ## Tech Stack
@@ -346,44 +354,36 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Built for reliable and performant webhook processing**
 
-Both endpoints require authentication via headers:
-- `asaas-access-token` for Asaas webhooks
-- `stripe-access-token` for Stripe webhooks (if configured)
-
-### 📖 Documentation
-
-For detailed documentation in Portuguese, see below section.
-
 ---
 
-## 🇧🇷 Documentação em Português
+## Documentação em Português
 
-### 📋 Índice
-- [Descrição do Projeto](#-descrição-do-projeto)
-- [Arquitetura do Sistema](#-arquitetura-do-sistema)
-- [Estrutura de Arquivos](#-estrutura-de-arquivos)
-- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
-- [Sistema de Módulos](#-sistema-de-módulos)
-- [Objetivos e Características](#-objetivos-e-características)
-- [Como Funciona](#-como-funciona)
-- [Instalação e Configuração](#-instalação-e-configuração)
-- [Uso](#-uso)
-- [Contribuição](#-contribuição)
+### Índice
+- [Descrição do Projeto](#descrição-do-projeto)
+- [Arquitetura do Sistema](#arquitetura-do-sistema)
+- [Estrutura de Arquivos](#estrutura-de-arquivos)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Sistema de Módulos](#sistema-de-módulos)
+- [Objetivos e Características](#objetivos-e-características)
+- [Como Funciona](#como-funciona)
+- [Instalação e Configuração](#instalação-e-configuração)
+- [Uso](#uso)
+- [Contribuição](#contribuição)
 
-## 🌐 Descrição do Projeto
+## Descrição do Projeto
 
 Este é um **sistema webhook empresarial de alta performance** desenvolvido em **Node.js** com integração **Redis** e **MongoDB**. O projeto foi criado especificamente para processar webhooks de plataformas de pagamento como **Asaas** e **Stripe**, garantindo idempotência, alta disponibilidade e processamento eficiente de eventos financeiros.
 
-### 🎯 Problema Resolvido
+### Problema Resolvido
 
 O sistema resolve o problema de processamento confiável de webhooks de pagamento, evitando:
-- ✅ Duplicação de eventos
-- ✅ Perda de dados durante picos de tráfego
-- ✅ Lentidão no processamento
-- ✅ Falhas de comunicação entre sistemas
-- ✅ Problemas de autenticação e segurança
+- Duplicação de eventos
+- Perda de dados durante picos de tráfego
+- Lentidão no processamento
+- Falhas de comunicação entre sistemas
+- Problemas de autenticação e segurança
 
-## 🏗️ Arquitetura do Sistema
+## Arquitetura do Sistema
 
 ### Diagrama Conceitual
 ```
@@ -414,24 +414,24 @@ O sistema resolve o problema de processamento confiável de webhooks de pagament
 - Tokens configurados dinamicamente via banco de dados
 - Middleware de segurança em todas as rotas
 
-#### ⚡ **Cache Redis (Idempotência)**
+#### **Cache Redis (Idempotência)**
 - Utiliza **RedisOver** para funcionalidades avançadas
 - Armazena chaves únicas por evento (eventId + path) 
 - TTL configurável (padrão: 24h / 86400s)
 - Previne processamento duplicado de eventos
 - Configuração dinâmica entre ambientes local e produção
 
-#### 💾 **Persistência MongoDB**
+#### **Persistência MongoDB**
 - Fila de eventos para processamento assíncrono
 - Configuração dinâmica de collections
 - Suporte a múltiplos bancos de dados
 
-#### 🌐 **Servidor HTTP/HTTPS**
+#### **Servidor HTTP/HTTPS**
 - Framework Koa.js para alta performance
 - Suporte automático HTTP (desenvolvimento) e HTTPS (produção)
 - CORS configurado para integração cross-origin
 
-## 📁 Estrutura de Arquivos
+## Estrutura de Arquivos
 
 ```
 webhook-template/
@@ -468,7 +468,7 @@ webhook-template/
     └── index.js              # Roteador principal
 ```
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 ### **Backend Core**
 - **Node.js** - Runtime JavaScript
@@ -497,7 +497,7 @@ webhook-template/
 - **nodemon** (v3.1.9) - Auto-reload durante desenvolvimento
 - **@types/node** (v22.13.16) - Tipos TypeScript para Node.js
 
-## 🔧 Sistema de Módulos
+## Sistema de Módulos
 
 ### **CommonJS (Configurado)**
 Este projeto utiliza **CommonJS** como sistema de módulos, configurado em `package.json`:
@@ -557,7 +557,7 @@ import asaas from '../controllers/asaas/hook.js';
 export default router;
 ```
 
-## ✅ Objetivos e Características
+## Objetivos e Características
 
 ### **🎯 Objetivos Principais**
 - **Alta Performance**: Processamento rápido com cache Redis
@@ -575,7 +575,7 @@ export default router;
 - **Monitoramento**: Sistema de logs integrado para debugging
 - **Configuração Dinâmica**: Variáveis de ambiente organizadas por seções
 
-## ⚙️ Como Funciona
+## Como Funciona
 
 ### **1. Recepção do Webhook**
 ```javascript
@@ -626,7 +626,7 @@ const key = await redis.parseKey('/asaas', {
 { "error": true, "message": "Error description" }
 ```
 
-## 🚀 Instalação e Configuração
+## Instalação e Configuração
 
 ### **Pré-requisitos**
 - Node.js >= 16.x
@@ -817,7 +817,7 @@ npm start
 npm test
 ```
 
-## 📖 Uso
+## Uso
 
 ### **Endpoints Disponíveis**
 
@@ -874,7 +874,7 @@ O sistema inclui logs detalhados para:
 - Erros e exceções com stack trace
 - Status de conexão MongoDB
 
-## 🤝 Contribuição
+## Contribuição
 
 ### **Estrutura de Ambiente**
 ```javascript
@@ -932,10 +932,10 @@ refactor: melhora estrutura de rotas
 
 ---
 
-**Desenvolvido para processar webhooks de forma confiável e performática** 🚀
+**Desenvolvido para processar webhooks de forma confiável e performática**
 
-### 👤 Autor
+### Autor
 **Lucas Silva de Moraes** - Desenvolvedor Backend
 
-### 📄 Licença
+### Licença
 Este projeto está sob a licença **MIT** - veja o arquivo [LICENSE](LICENSE) para detalhes.
