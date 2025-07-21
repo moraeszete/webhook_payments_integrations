@@ -24,7 +24,6 @@ async function connect () {
   try {
     const ping = await redis._ping();
     console.log('Redis connected:', ping);
-    global.redis = redis
   } catch (error) {
     return console.log('Redis:', error)    
   }
