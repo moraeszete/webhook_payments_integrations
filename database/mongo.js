@@ -1,20 +1,28 @@
-const { MongoClient, ObjectId } = require("mongodb")
+const { MongoClient, ObjectId: MongoObjectId } = require("mongodb");
 
-const mongoUri = process.env.MONGO_URI 
-const dbName = process.env.MONGO_DATABASE
-let db
+const mongoUri = process.env.MONGO_URI;
+const dbName = process.env.MONGO_DATABASE;
+
+let _db;
 
 async function connect() {
-  const client = new MongoClient(mongoUri)
-  await client.connect()
-  db = client.db(dbName)
+  const client = new MongoClient(mongoUri);
+  await client.connect();
+  _db = client.db(dbName);
+  return _db;
 }
 
-connect()
+function getDb() {
+  if (!_db) throw new Error("MongoDB not connected. Call connect() first.");
+  return _db;
+}
+
+function toObjectId(id) {
+  return new MongoObjectId(id);
+}
 
 module.exports = {
-  db,
-  toObjectId(_id) {
-    return new ObjectId(_id)
-  },
-}
+  connect,
+  getDb,
+  toObjectId,
+};
