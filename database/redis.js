@@ -1,33 +1,30 @@
 const RedisOver = require('redisover')
-let redis;
+let _redis;
 
 async function connect () {
   const config = {
-    prefix: process.MONGO_DATABASE,
-    // options: {
-    //   this null options in redisover are accepted
-    //   use if you will be in local or development
-    //   host: process.env.REDIS_HOST,
-    //   port: Number(process.env.REDIS_PORT),
-    //   username: global.redisConfig?.username || '',
-    //   password: global.redisConfig?.password || ''
-    // }
+    prefix: process.env.REDIS_PREFIX
   }
-  if (process.env.MODE_ENV === 'prod') {
-    config.options.host = process.env.REDIS_HOST;
-    config.options.port = Number(process.env.REDIS_PORT);
-    config.options.username = process.env.REDIS_USERNAME || '';
-    config.options.password = process.env.REDIS_PASSWORD || '';
+  
+  // Only add Redis connection options if not in local mode
+  if (process.env.SERVER_MODE !== 'local') {
+    config.options = {
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD
+    }
   }
-  redis = new RedisOver(config)
-
-  try {
-    const ping = await redis._ping();
-    console.log('Redis connected:', ping);
-  } catch (error) {
-    return console.log('Redis:', error)    
-  }
+  
+  _redis = new RedisOver(config)
 }
-connect()
 
-module.exports = redis;
+function getDb() {
+  if(!_redis) throw new Error("Redis not connected. Call connect() first.");
+  return _redis
+}
+
+module.exports = {
+  connect, 
+  getDb,
+};

@@ -1,4 +1,4 @@
-const { MongoClient, ObjectId: MongoObjectId } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 
 const mongoUri = process.env.MONGO_URI;
 const dbName = process.env.MONGO_DATABASE;
@@ -18,7 +18,7 @@ function getDb() {
 }
 
 function toObjectId(id) {
-  return new MongoObjectId(id);
+  return new ObjectId(id.toString());
 }
 
 module.exports = {

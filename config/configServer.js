@@ -1,9 +1,17 @@
-const mongo = require('../database/mongo')
-const redis = require('../database/redis')
+const mongodb = require('../database/mongo')
+const redisdb = require('../database/redis')
 const timestamps = require('../functions/createTimestamps')
 
+// Mongo {connect(), getDb(), toObjectId()}
+// Redis {connect(), getDb()}
+// This implementation was made for garbage collecting purposes
+
 module.exports = async () => {
-  global.mongo = mongo
-  global.redis = redis
+  // MongoDB connection
+  await mongodb.connect()
+  global.mongo = mongodb.getDb()
+  // redis connection
+  await redisdb.connect()
+  global.redis = redisdb.getDb()
   global.timestamps = timestamps
 }
