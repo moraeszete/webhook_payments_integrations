@@ -41,7 +41,8 @@ const SQL_PASSWORD = process.env.SQL_PWD;
 function detectDatabaseType() {
   const hasMongoVars = MONGO_URI && DATABASE_NAME && COLLECTION_NAME;
   const hasSqlVars = SQL_HOST && SQL_DATABASE && SQL_USER && SQL_PASSWORD;
-
+  
+  // Prefer MongoDB if both are available
   if (hasMongoVars && hasSqlVars) {
     return 'mongo'; // Prefer MongoDB if both available
   } else if (hasMongoVars) {
