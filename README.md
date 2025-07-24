@@ -726,7 +726,10 @@ node scripts/createToken.js
 ```
 
 #### Variáveis de Ambiente para Criação de Tokens
-Adicione estas ao seu arquivo `.env`:
+
+Verifique se `.env` recebeu a estrutura correta como em `.env.example`
+
+Se não adicione estas ao seu arquivo `.env`:
 
 ```env
 # Configuração de Criação de Token
@@ -735,14 +738,19 @@ MONGO_URI=mongodb://localhost:27017  # String de conexão do MongoDB
 MONGO_DATABASE=webhook               # Nome do banco de dados
 SUPPLIERS_TOKENS=suppliers_tokens    # Nome da coleção para tokens
 
-# Configuração SQL opcional (para uso futuro)
+# Configuração SQL 
 # SQL_HOST=localhost
 # SQL_DATABASE=webhook
-# SQL_USER=seu_usuario
-# SQL_PASSWORD=sua_senha
+# SQL_USERNAME=seu_usuario
+# SQL_PWD=sua_senha
 ```
 
-#### Como Funciona a Criação de Tokens
+#### Como Funciona e finalidade a Criação de Tokens
+
+O funcionamento e fnalidade são simples da criação token e bem simples:
+
+1. **Otimizar**: Tornar a criação de tokens de autenticação de sistemas para o webhook mais agil e simples.
+
 1. **Auto-Detecção**: O script detecta automaticamente qual banco de dados está configurado
 2. **Criação de Documento**: Cria um novo documento no MongoDB com token hasheado por bcrypt
 3. **Geração de ID**: Retorna o ObjectId do MongoDB para o token criado
