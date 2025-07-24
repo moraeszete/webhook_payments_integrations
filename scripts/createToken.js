@@ -33,8 +33,8 @@ const COLLECTION_NAME = process.env.SUPPLIERS_TOKENS;
 // SQL environment variables
 const SQL_HOST = process.env.SQL_HOST;
 const SQL_DATABASE = process.env.SQL_DATABASE;
-const SQL_USER = process.env.SQL_USER;
-const SQL_PASSWORD = process.env.SQL_PASSWORD;
+const SQL_USER = process.env.SQL_USERNAME;
+const SQL_PASSWORD = process.env.SQL_PWD;
 /**
  * Auto-detect database type based on environment variables
  */
@@ -163,7 +163,7 @@ async function mongo() {
 }
 
 /**
- * Create token for SQL databases (placeholder)
+ * Create token for SQL databases
  */
 async function sql() {
   const { secret, hashSecret } = generateToken();
@@ -176,8 +176,7 @@ async function sql() {
     tokenId: 'PENDING_ID',
     database: 'SQL',
     savedToDatabase: false,
-    timestamp: new Date().toISOString(),
-    note: 'SQL implementation not yet available'
+    timestamp: new Date().toISOString()
   };
 
   if (!canCreateInDB) {
@@ -188,18 +187,80 @@ async function sql() {
     return completeObject;
   }
 
+  // Validate environment variables
+  if (!SQL_HOST || !SQL_DATABASE || !SQL_USER || !SQL_PASSWORD) {
+    const missingVars = [];
+    if (!SQL_HOST) missingVars.push('SQL_HOST');
+    if (!SQL_DATABASE) missingVars.push('SQL_DATABASE');
+    if (!SQL_USER) missingVars.push('SQL_USER');
+    if (!SQL_PASSWORD) missingVars.push('SQL_PASSWORD');
+
+    const errorResult = {
+      ...completeObject,
+      success: false,
+      error: `Missing required environment variables: ${missingVars.join(', ')}`,
+      missingVariables: missingVars
+    };
+
+    console.error('Missing environment variables:', missingVars.join(', '));
+    if (process.argv.includes('-e')) {
+      console.log(JSON.stringify(errorResult, null, 2));
+    }
+    return errorResult;
+  }
+
   try {
-    // TODO: Implement SQL database token creation
-    // For now, simulate ID generation
-    const simulatedId = Date.now().toString();
+    const mysql = require('promise-mysql');
     
-    completeObject.tokenId = simulatedId;
-    completeObject.token = `${secret}:${simulatedId}`;
-    completeObject.note = 'SQL implementation not yet available - simulated ID';
-    
-    console.warn('SQL token creation not implemented yet');
-    console.warn(`Simulated token: ${secret}:${simulatedId}`);
-    
+    // Create database connection
+    const connection = await mysql.createConnection({
+      host: SQL_HOST,
+      database: SQL_DATABASE,
+      user: SQL_USER,
+      password: SQL_PASSWORD,
+      timezone: 'UTC'
+    });
+
+    // Create suppliers_tokens table if it doesn't exist
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS suppliers_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        token VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        active BOOLEAN DEFAULT TRUE,
+        INDEX idx_token (token),
+        INDEX idx_active (active)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `;
+
+    await connection.query(createTableQuery);
+
+    // Insert new token record
+    const insertQuery = `
+      INSERT INTO suppliers_tokens (token, created_at, updated_at, active)
+      VALUES (?, NOW(), NOW(), TRUE)
+    `;
+
+    const result = await connection.query(insertQuery, [hashSecret]);
+    const insertedId = result.insertId.toString();
+
+    // Update complete object with generated ID
+    completeObject.success = true;
+    completeObject.savedToDatabase = true;
+    completeObject.tokenId = insertedId;
+    completeObject.token = `${secret}:${insertedId}`;
+    completeObject.sqlResult = {
+      affectedRows: result.affectedRows,
+      insertId: insertedId
+    };
+
+    console.warn('Token created successfully in SQL database');
+    console.warn(`Authentication token: ${secret}:${insertedId}`);
+    console.warn(`Generated token ID: ${insertedId}`);
+
+    await connection.end();
+
     if (process.argv.includes('-e')) {
       console.log(JSON.stringify(completeObject, null, 2));
     }
@@ -212,7 +273,7 @@ async function sql() {
       savedToDatabase: false
     };
 
-    console.error('Error creating SQL token:', error.message);
+    console.error('Error creating token in SQL database:', error.message);
     if (process.argv.includes('-e')) {
       console.log(JSON.stringify(errorResult, null, 2));
     }

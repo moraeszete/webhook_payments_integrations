@@ -103,51 +103,180 @@ webhook_payments_integrations/
 
 Create a `.env` file based on `.env.example`:
 
-```env
-# Server Configuration
-NODE_ENV=local
-PORT=3000
-SERVER_MODE=local
-
-# Security
-SECRET_KEY=your-secret-key-here
-
-# MongoDB Configuration
-MONGO_DATABASE=webhooks
-MONGO_URI=mongodb://localhost:27017
-
-# Redis Configuration
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_USERNAME=your-redis-username
-REDIS_PASSWORD=your-redis-password
-
-# Token Management
-CREATE_IN_DB=true
-SUPPLIERS_TOKENS=suppliers_tokens
-
-# Queue Collections
-ASAAS_QUEUE=asaas_queue
-STRIPE_QUEUE=stripe_queue
-```
-
 ## Token Management
 
-The project includes an intelligent token creation system:
+The project includes an intelligent token creation system that supports both MongoDB and SQL databases with automatic detection capabilities.
+
+### Token Creation Methods
+
+#### 1. Auto-Detection (Recommended)
+The system automatically detects your database configuration and creates tokens accordingly:
 
 ```bash
 # Auto-detect database and create token
 node -e "require('./scripts/createToken').auto()"
+```
 
-# Output example:
+**How it works:**
+- Checks for MongoDB environment variables (`MONGO_URI`, `MONGO_DATABASE`, `SUPPLIERS_TOKENS`)
+- Checks for SQL environment variables (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PASSWORD`)
+- Prefers MongoDB if both databases are configured
+- Falls back to memory-only generation if no database is configured
+
+#### 2. Force MongoDB Creation
+```bash
+# Force MongoDB token creation
+node -e "require('./scripts/createToken').mongo()"
+```
+
+#### 3. Force SQL Creation
+```bash
+# Force SQL database token creation
+node -e "require('./scripts/createToken').sql()"
+```
+
+#### 4. Memory-Only Generation
+```bash
+# Generate token without database storage
+node -e "require('./scripts/createToken').generate()"
+```
+
+#### 5. Direct Script Execution
+```bash
+# Run the script directly (uses auto-detection)
+node scripts/createToken.js
+```
+
+### Environment Variables Required
+
+#### For MongoDB Support:
+```env
+CREATE_IN_DB=true
+MONGO_URI=mongodb://localhost:27017
+MONGO_DATABASE=webhooks
+SUPPLIERS_TOKENS=suppliers_tokens
+```
+
+#### For SQL Support:
+```env
+CREATE_IN_DB=true
+SQL_HOST=localhost
+SQL_DATABASE=webhooks
+SQL_USER=your_username
+SQL_PASSWORD=your_password
+```
+
+### Token Format and Structure
+
+#### Generated Token Format:
+```
+{secret}:{database_id}
+```
+
+**Example:** `abc123def:674a2b1c8d9e3f4a5b6c7d8e`
+
+Where:
+- `abc123def` = Plain text secret (10 characters)
+- `674a2b1c8d9e3f4a5b6c7d8e` = Database record ID
+
+#### Database Storage:
+
+**MongoDB Document:**
+```javascript
+{
+  _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
+  token: "$2b$08$hashedTokenValue...",  // bcrypt hash of secret
+  createdAt: Date,
+  updatedAt: Date,
+  active: true
+}
+```
+
+**SQL Table Structure:**
+```sql
+CREATE TABLE suppliers_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  token VARCHAR(255) NOT NULL,           -- bcrypt hash
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  active BOOLEAN DEFAULT TRUE
+);
+```
+
+### Usage Examples and Output
+
+#### Success Output Example:
+```json
 {
   "success": true,
   "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
+  "secret": "abc123def",
+  "hashSecret": "$2b$08$hashedValue...",
   "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
   "database": "MongoDB",
-  "savedToDatabase": true
+  "savedToDatabase": true,
+  "timestamp": "2025-07-24T10:30:00.000Z"
 }
 ```
+
+#### Error Output Example:
+```json
+{
+  "success": false,
+  "error": "Missing required environment variables: MONGO_URI, MONGO_DATABASE",
+  "missingVariables": ["MONGO_URI", "MONGO_DATABASE"],
+  "database": "MongoDB",
+  "savedToDatabase": false
+}
+```
+
+### How to Use Generated Tokens
+
+1. **Copy the token value** from the output (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
+
+2. **Use in webhook requests** as authentication headers:
+   ```http
+   POST /asaas
+   Content-Type: application/json
+   asaas-access-token: abc123def:674a2b1c8d9e3f4a5b6c7d8e
+   ```
+
+3. **The system validates** by:
+   - Extracting the secret part (`abc123def`)
+   - Finding the database record using the ID part (`674a2b1c8d9e3f4a5b6c7d8e`)
+   - Comparing the bcrypt hash of the secret with stored hash
+
+### Token Validation Process
+
+```javascript
+// 1. Extract token parts
+const [secret, tokenId] = receivedToken.split(':');
+
+// 2. Find database record
+const tokenRecord = await db.findById(tokenId);
+
+// 3. Validate secret against stored hash
+const isValid = await bcrypt.compare(secret, tokenRecord.token);
+
+// 4. Check if token is active
+if (isValid && tokenRecord.active) {
+  // Token is valid - allow request
+}
+```
+
+### Advanced Configuration
+
+#### Disable Database Storage:
+```env
+CREATE_IN_DB=false
+```
+When disabled, tokens are generated but not saved to database (useful for testing).
+
+#### Multiple Database Support:
+If both MongoDB and SQL are configured, the system will:
+1. Prefer MongoDB by default
+2. Allow manual selection via specific methods
+3. Provide clear indication of which database was used
 
 ## API Endpoints
 
@@ -309,14 +438,6 @@ npm test
 - Keep functions focused and small
 - Document significant changes
 
-### Commit Format
-```bash
-feat: add support for XYZ provider
-fix: resolve Stripe token validation issue
-docs: update installation documentation
-refactor: improve route structure
-```
-
 ## Security Considerations
 
 - All tokens are bcrypt hashed before storage
@@ -342,13 +463,7 @@ CERTS_CACERTIFICATESERVICES=ca-services.crt
 - Request/response compression
 - Monitoring and logging
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Author
-
-**Lucas Silva de Moraes** - Backend Developer
+## Author: **Lucas Silva de Moraes** - Full-stack Developer
 
 ---
 
@@ -643,54 +758,6 @@ npm install
 
 ### **2. Configuração de Ambiente**
 Crie arquivo `.env` baseado no `.env.example`:
-```env
-# =================================
-# ENVIRONMENT CONFIGURATION
-# =================================
-
-# Server Configuration
-NODE_ENV=local  # ou 'production'
-PORT=3000
-SERVER_MODE=local  # ou 'production' para HTTPS
-
-# =================================
-# DATABASE CONFIGURATION
-# =================================
-
-# MongoDB
-MONGO_DATABASE=webhooks
-
-# Redis (RedisOver Configuration)
-REDIS_HOST=localhost          # ou seu host Redis
-REDIS_PORT=6379              # porta do Redis
-REDIS_USERNAME=your-username # se necessário
-REDIS_PASSWORD=your-password # se necessário
-REDIS_DB_NUMBER=0           # número do banco Redis
-
-# =================================
-# QUEUES CONFIGURATION
-# =================================
-SUPPLIERS_TOKENS=suppliers_tokens
-ASAAS_QUEUE=asaas_queue
-STRIPE_QUEUE=stripe_queue
-TWILIO_QUEUE=twilio_queue
-
-# =================================
-# SECURITY CONFIGURATION
-# =================================
-SECRET_KEY=your-secret-key-here
-
-# Token Creation Configuration
-CREATE_IN_DB=true                    # Set to true to save tokens in database
-
-# =================================
-# SSL CERTIFICATES (Production Only)
-# =================================
-CERTS_KEY=server.key
-CERTS_CERTIFICATION=server.crt
-CERTS_CABUNDLE=ca-bundle.crt
-CERTS_CACERTIFICATESERVICES=ca-services.crt
-```
 
 ### **3. Token Creation and Management**
 
@@ -755,24 +822,178 @@ Para compatibilidade com versões anteriores, os tokens ainda podem ser configur
 
 #### **Sistema Avançado de Criação de Tokens**
 
-O projeto inclui um sistema inteligente de criação de tokens que detecta automaticamente sua configuração de banco de dados:
+O projeto inclui um sistema inteligente de criação de tokens que suporta bancos MongoDB e SQL com capacidades de detecção automática.
+
+##### **Métodos de Criação de Tokens**
+
+**1. Auto-Detecção (Recomendado)**
+O sistema detecta automaticamente sua configuração de banco de dados:
 
 ```bash
 # Auto-detecta o banco e cria token
 node -e "require('./scripts/createToken').auto()"
+```
 
+**Como funciona:**
+- Verifica variáveis de ambiente do MongoDB (`MONGO_URI`, `MONGO_DATABASE`, `SUPPLIERS_TOKENS`)
+- Verifica variáveis de ambiente do SQL (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PASSWORD`)
+- Prefere MongoDB se ambos os bancos estiverem configurados
+- Gera apenas na memória se nenhum banco estiver configurado
+
+**2. Forçar Criação no MongoDB**
+```bash
 # Força criação no MongoDB
 node -e "require('./scripts/createToken').mongo()"
+```
 
-# Força criação no SQL (implementação futura)
+**3. Forçar Criação no SQL**
+```bash
+# Força criação no banco SQL
 node -e "require('./scripts/createToken').sql()"
+```
 
-# Gera token apenas na memória
+**4. Geração Apenas na Memória**
+```bash
+# Gera token sem armazenar no banco
 node -e "require('./scripts/createToken').generate()"
+```
 
-# Execução direta
+**5. Execução Direta do Script**
+```bash
+# Executa o script diretamente (usa auto-detecção)
 node scripts/createToken.js
 ```
+
+##### **Variáveis de Ambiente Necessárias**
+
+**Para Suporte ao MongoDB:**
+```env
+CREATE_IN_DB=true
+MONGO_URI=mongodb://localhost:27017
+MONGO_DATABASE=webhooks
+SUPPLIERS_TOKENS=suppliers_tokens
+```
+
+**Para Suporte ao SQL:**
+```env
+CREATE_IN_DB=true
+SQL_HOST=localhost
+SQL_DATABASE=webhooks
+SQL_USER=seu_usuario
+SQL_PASSWORD=sua_senha
+```
+
+##### **Formato e Estrutura do Token**
+
+**Formato do Token Gerado:**
+```
+{secret}:{id_do_banco}
+```
+
+**Exemplo:** `abc123def:674a2b1c8d9e3f4a5b6c7d8e`
+
+Onde:
+- `abc123def` = Segredo em texto simples (10 caracteres)
+- `674a2b1c8d9e3f4a5b6c7d8e` = ID do registro no banco de dados
+
+##### **Armazenamento no Banco:**
+
+**Documento MongoDB:**
+```javascript
+{
+  _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
+  token: "$2b$08$valorHasheado...",  // hash bcrypt do segredo
+  createdAt: Date,
+  updatedAt: Date,
+  active: true
+}
+```
+
+**Estrutura da Tabela SQL:**
+```sql
+CREATE TABLE suppliers_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  token VARCHAR(255) NOT NULL,           -- hash bcrypt
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  active BOOLEAN DEFAULT TRUE
+);
+```
+
+##### **Exemplos de Uso e Saída**
+
+**Exemplo de Saída de Sucesso:**
+```json
+{
+  "success": true,
+  "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
+  "secret": "abc123def",
+  "hashSecret": "$2b$08$valorHasheado...",
+  "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
+  "database": "MongoDB",
+  "savedToDatabase": true,
+  "timestamp": "2025-07-24T10:30:00.000Z"
+}
+```
+
+**Exemplo de Saída de Erro:**
+```json
+{
+  "success": false,
+  "error": "Missing required environment variables: MONGO_URI, MONGO_DATABASE",
+  "missingVariables": ["MONGO_URI", "MONGO_DATABASE"],
+  "database": "MongoDB",
+  "savedToDatabase": false
+}
+```
+
+##### **Como Usar os Tokens Gerados**
+
+1. **Copie o valor do token** da saída (ex: `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
+
+2. **Use em requisições de webhook** como headers de autenticação:
+   ```http
+   POST /asaas
+   Content-Type: application/json
+   asaas-access-token: abc123def:674a2b1c8d9e3f4a5b6c7d8e
+   ```
+
+3. **O sistema valida** através de:
+   - Extração da parte do segredo (`abc123def`)
+   - Busca do registro no banco usando a parte do ID (`674a2b1c8d9e3f4a5b6c7d8e`)
+   - Comparação do hash bcrypt do segredo com o hash armazenado
+
+##### **Processo de Validação do Token**
+
+```javascript
+// 1. Extrair partes do token
+const [secret, tokenId] = tokenRecebido.split(':');
+
+// 2. Buscar registro no banco
+const registroToken = await db.findById(tokenId);
+
+// 3. Validar segredo contra hash armazenado
+const isValido = await bcrypt.compare(secret, registroToken.token);
+
+// 4. Verificar se token está ativo
+if (isValido && registroToken.active) {
+  // Token é válido - permitir requisição
+}
+```
+
+##### **Configuração Avançada**
+
+**Desabilitar Armazenamento no Banco:**
+```env
+CREATE_IN_DB=false
+```
+Quando desabilitado, tokens são gerados mas não salvos no banco (útil para testes).
+
+**Suporte a Múltiplos Bancos:**
+Se MongoDB e SQL estiverem configurados, o sistema irá:
+1. Preferir MongoDB por padrão
+2. Permitir seleção manual via métodos específicos
+3. Fornecer indicação clara de qual banco foi usado
 
 #### **Como Funciona o Sistema de Tokens**
 1. **Auto-Detecção**: O script detecta automaticamente qual banco está configurado
@@ -914,28 +1135,15 @@ const tokenHeaders = [
 ];
 ```
 
-### **Padrões de Código**
+<!-- ### **Padrões de Código**
 - Use `async/await` para operações assíncronas
 - Valide entrada com middleware personalizado
 - Implemente tratamento de erros consistente
 - Mantenha funções pequenas e focadas
 - Use CommonJS para consistência
 - Documente mudanças no README
-
-### **Estrutura de Commits**
-```bash
-feat: adiciona suporte ao provedor XYZ
-fix: corrige validação de token Stripe
-docs: atualiza documentação de instalação
-refactor: melhora estrutura de rotas
-```
-
----
+--- -->
 
 **Desenvolvido para processar webhooks de forma confiável e performática**
 
-### Autor
-**Lucas Silva de Moraes** - Desenvolvedor Backend
-
-### Licença
-Este projeto está sob a licença **MIT** - veja o arquivo [LICENSE](LICENSE) para detalhes.
+### Autor: **Lucas Silva de Moraes** - Desenvolvedor Full-stack
