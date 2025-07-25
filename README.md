@@ -4,11 +4,9 @@
 
 ---
 
-## English Documentation
-
-A high-performance enterprise webhook system built with Node.js, Redis, and MongoDB for processing payment platform webhooks from Asaas, Stripe, and other providers.
-
-## Overview
+## English Documentation - Overview
+A high-performance enterprise webhook system built with Node.js, Redis, and MongoDB and SQL.
+**Built for reliable and performant webhook processing**
 
 This project provides a robust webhook processing system designed specifically for payment platforms. It ensures idempotency, high availability, and efficient processing of financial events with enterprise-grade security and scalability.
 
@@ -84,7 +82,7 @@ Create a `.env` file based on `.env.example`:
 
 ## Token Management
 
-The project includes an intelligent token creation system that supports both MongoDB and SQL databases with automatic detection capabilities.
+The project includes an intelligent token creation system that supports both MongoDB and SQL databases with automatic detection capabilities. With you use Mongoose or any schema in the database, make sure it is made before using the token generation.
 
 ### Token Creation Methods
 
@@ -98,8 +96,8 @@ node -e "require('./scripts/createToken').auto()"
 
 **How it works:**
 - Checks for MongoDB environment variables (`MONGO_URI`, `MONGO_DATABASE`, `SUPPLIERS_TOKENS`)
-- Checks for SQL environment variables (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PASSWORD`)
-- Prefers MongoDB if both databases are configured
+- Checks for SQL environment variables (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PWD`)
+- Prefers MongoDB if both databases are configured (it can be easily changed)
 - Falls back to memory-only generation if no database is configured
 
 #### 2. Force MongoDB Creation
@@ -142,10 +140,10 @@ CREATE_IN_DB=true
 SQL_HOST=localhost
 SQL_DATABASE=webhooks
 SQL_USER=your_username
-SQL_PASSWORD=your_password
+SQL_PWD=your_password
 ```
 
-### Token Format and Structure
+## Token Format and Structure
 
 #### Generated Token Format:
 ```
@@ -444,11 +442,7 @@ CERTS_CACERTIFICATESERVICES=ca-services.crt
 
 ## Author: Lucas Silva de Moraes - Full-stack Developer
 
----
 
-**Built for reliable and performant webhook processing**
-
----
 
 ## Documentação em Português
 
