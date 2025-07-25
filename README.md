@@ -145,12 +145,10 @@ SQL_PWD=your_password
 
 ## Token Format and Structure
 
-#### Generated Token Format:
+#### Generated Token Format (Mongo format as example):
 ```
-{secret}:{database_id}
+{secret}:{database_id} = abc123def:674a2b1c8d9e3f4a5b6c7d8e
 ```
-
-**Example:** `abc123def:674a2b1c8d9e3f4a5b6c7d8e`
 
 Where:
 - `abc123def` = Plain text secret (10 characters)
@@ -180,7 +178,7 @@ CREATE TABLE suppliers_tokens (
 );
 ```
 
-### Usage Examples and Output
+## Usage Examples and Output
 
 #### Success Output Example:
 ```json
@@ -210,14 +208,7 @@ CREATE TABLE suppliers_tokens (
 ### How to Use Generated Tokens
 
 1. **Copy the token value** from the output (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
-
-2. **Use in webhook requests** as authentication headers:
-   ```http
-   POST /asaas
-   Content-Type: application/json
-   asaas-access-token: abc123def:674a2b1c8d9e3f4a5b6c7d8e
-   ```
-
+2. **Use in webhook requests** as authentication header
 3. **The system validates** by:
    - Extracting the secret part (`abc123def`)
    - Finding the database record using the ID part (`674a2b1c8d9e3f4a5b6c7d8e`)
