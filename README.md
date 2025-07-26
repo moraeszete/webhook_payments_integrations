@@ -76,28 +76,47 @@ webhook_payments_integrations/
     └── index.js             # Main router
 ```
 
+
 ## Environment Configuration
 
-Create a `.env` file based on `.env.example`:
+Create a `.env` file based on `.env.example`. If it does not exist, add the following variables as needed:
+
+```env
+# Token Creation Configuration
+CREATE_IN_DB=true                    # Set to true to save tokens in the database
+MONGO_URI=mongodb://localhost:27017  # MongoDB connection string
+MONGO_DATABASE=webhooks              # Database name
+SUPPLIERS_TOKENS=suppliers_tokens    # Collection name for tokens
+
+# SQL Configuration (optional)
+# SQL_HOST=localhost
+# SQL_DATABASE=webhooks
+# SQL_USER=your_username
+# SQL_PWD=your_password
+```
+
+You can disable database storage for tokens (useful for testing) by setting:
+```env
+CREATE_IN_DB=false
+```
+
 
 ## Token Management
 
-The project includes an intelligent token creation system that supports both MongoDB and SQL databases with automatic detection capabilities. With you use Mongoose or any schema in the database, make sure it is made before using the token generation.
+This project includes an advanced token creation system that supports both MongoDB and SQL databases with automatic detection. Before using token generation, ensure your database schemas (Mongoose or SQL) are set up.
 
 ### Token Creation Methods
 
 #### 1. Auto-Detection (Recommended)
-The system automatically detects your database configuration and creates tokens accordingly:
-
+Automatically detects your database configuration and creates tokens accordingly:
 ```bash
 # Auto-detect database and create token
 node -e "require('./scripts/createToken').auto()"
 ```
-
 **How it works:**
 - Checks for MongoDB environment variables (`MONGO_URI`, `MONGO_DATABASE`, `SUPPLIERS_TOKENS`)
 - Checks for SQL environment variables (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PWD`)
-- Prefers MongoDB if both databases are configured (it can be easily changed)
+- Prefers MongoDB if both are configured
 - Falls back to memory-only generation if no database is configured
 
 #### 2. Force MongoDB Creation
@@ -108,7 +127,7 @@ node -e "require('./scripts/createToken').mongo()"
 
 #### 3. Force SQL Creation
 ```bash
-# Force SQL database token creation
+# Force SQL token creation
 node -e "require('./scripts/createToken').sql()"
 ```
 
@@ -124,39 +143,25 @@ node -e "require('./scripts/createToken').generate()"
 node scripts/createToken.js
 ```
 
-### Environment Variables Required
+#### Legacy Configuration
+For backward compatibility, tokens can also be configured dynamically via the `getServiceConfigs()` function, which fetches settings from an external service.
 
-#### For MongoDB Support:
-```env
-CREATE_IN_DB=true
-MONGO_URI=mongodb://localhost:27017
-MONGO_DATABASE=webhooks
-SUPPLIERS_TOKENS=suppliers_tokens
-```
-
-#### For SQL Support:
-```env
-CREATE_IN_DB=true
-SQL_HOST=localhost
-SQL_DATABASE=webhooks
-SQL_USER=your_username
-SQL_PWD=your_password
-```
 
 ## Token Format and Structure
 
-#### Generated Token Format (Mongo format as example):
+**Generated Token Format:**
 ```
-{secret}:{database_id} = abc123def:674a2b1c8d9e3f4a5b6c7d8e
+{secret}:{database_id}
 ```
+Example: `abc123def:674a2b1c8d9e3f4a5b6c7d8e`
 
 Where:
 - `abc123def` = Plain text secret (10 characters)
 - `674a2b1c8d9e3f4a5b6c7d8e` = Database record ID
 
-#### Database Storage:
+**Database Storage:**
 
-**MongoDB Document:**
+*MongoDB Document:*
 ```javascript
 {
   _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
@@ -167,7 +172,7 @@ Where:
 }
 ```
 
-**SQL Table Structure:**
+*SQL Table Structure:*
 ```sql
 CREATE TABLE suppliers_tokens (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -178,9 +183,10 @@ CREATE TABLE suppliers_tokens (
 );
 ```
 
+
 ## Usage Examples and Output
 
-#### Success Output Example:
+**Success Output Example:**
 ```json
 {
   "success": true,
@@ -194,7 +200,7 @@ CREATE TABLE suppliers_tokens (
 }
 ```
 
-#### Error Output Example:
+**Error Output Example:**
 ```json
 {
   "success": false,
@@ -208,7 +214,12 @@ CREATE TABLE suppliers_tokens (
 ### How to Use Generated Tokens
 
 1. **Copy the token value** from the output (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
-2. **Use in webhook requests** as authentication header
+2. **Use in webhook requests** as authentication header:
+   ```http
+   POST /asaas
+   Content-Type: application/json
+   asaas-access-token: abc123def:674a2b1c8d9e3f4a5b6c7d8e
+   ```
 3. **The system validates** by:
    - Extracting the secret part (`abc123def`)
    - Finding the database record using the ID part (`674a2b1c8d9e3f4a5b6c7d8e`)
@@ -232,19 +243,20 @@ if (isValid && tokenRecord.active) {
 }
 ```
 
-### Advanced Configuration
 
-#### Disable Database Storage:
-```env
-CREATE_IN_DB=false
-```
-When disabled, tokens are generated but not saved to database (useful for testing).
+## Advanced Configuration
 
-#### Multiple Database Support:
-If both MongoDB and SQL are configured, the system will:
-1. Prefer MongoDB by default
-2. Allow manual selection via specific methods
-3. Provide clear indication of which database was used
+- **Disable Database Storage:**
+  ```env
+  CREATE_IN_DB=false
+  ```
+  When disabled, tokens are generated but not saved to the database (useful for testing).
+
+- **Multiple Database Support:**
+  If both MongoDB and SQL are configured, the system will:
+  1. Prefer MongoDB by default
+  2. Allow manual selection via specific methods
+  3. Provide clear indication of which database was used
 
 ## API Endpoints
 
@@ -253,11 +265,19 @@ If both MongoDB and SQL are configured, the system will:
 ```http
 POST /asaas
 POST /stripe
+POST /${anyother}
 ```
 
-Both endpoints require authentication via headers:
+Any endpoint requires authentication via headers that may be setted up in webhooks settings via service panel that will be used. e.g:
+
 - `asaas-access-token` for Asaas webhooks
-- `stripe-access-token` for Stripe webhooks
+
+Then add header's expected name in `index.js`
+```javascript
+  const tokenHeaders = [
+    "asaas-access-token"
+  ];
+```
 
 ### Request/Response Examples
 
@@ -308,12 +328,26 @@ The system receives webhook events via POST requests to provider-specific endpoi
 Uses Redis to prevent duplicate processing:
 ```javascript
 // Check if event already exists
-const existingEvent = await global.redis.get(ctx.path);
-
-if (existingEvent) {
-  // Return duplicate response
-  return { message: "Event received!" };
-}
+  const result = await global.redis.parse(
+    {
+      path: '/asaas'
+      event: 'PAYMENT_RECEIVED', 
+      eventId: 'unique-event-id' 
+    }, //keys
+    ctx.body, //value
+    86400 //ttl
+  );
+  /*
+    resultType {
+      created: boolean, 
+      key: string
+      value: any, 
+    }
+  */ 
+  if (!result.created) {
+    // Evento já processado - idempotência garantida
+    return { message: "Event received!" };
+  }
 ```
 
 ### 4. Event Processing
@@ -364,6 +398,7 @@ await global.redis.expire(ctx.path, 86400);
 // Check for existing event
 const existingEvent = await global.redis.get(ctx.path);
 ```
+
 
 ## Development Scripts
 
