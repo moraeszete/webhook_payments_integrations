@@ -4,26 +4,57 @@
 
 ---
 
-## English Documentation - Overview
-A high-performance enterprise webhook system built with Node.js, Redis, and MongoDB and SQL.
-**Built for reliable and performant webhook processing**
+## English Documentation
 
-This project provides a robust webhook processing system designed specifically for payment platforms. It ensures idempotency, high availability, and efficient processing of financial events with enterprise-grade security and scalability.
+### Table of Contents
+- [Project Description](#project-description)
+- [System Architecture](#system-architecture)
+- [File Structure](#file-structure)
+- [Technologies Used](#technologies-used)
+- [Module System](#module-system)
+- [Objectives and Features](#objectives-and-features)
+- [How It Works](#how-it-works)
+- [Installation and Configuration](#installation-and-configuration)
+- [Usage](#usage)
+- [Contributing](#contributing)
 
-## Key Features
+## Project Description
 
-- **Idempotency**: Prevents duplicate event processing using Redis
-- **High Performance**: Redis-powered caching and optimization  
-- **Multi-Provider Support**: Compatible with Asaas, Stripe, and extensible to other providers
-- **Scalable Architecture**: MongoDB queues for background processing
-- **Enterprise Security**: Token-based authentication system
-- **Production Ready**: HTTP/HTTPS support with SSL certificates
+This is a **high-performance enterprise webhook system** developed in **Node.js** with **Redis** and **MongoDB** integration. The project was created specifically to process webhooks from payment platforms like **Asaas** and **Stripe**, ensuring idempotency, high availability, and efficient processing of financial events.
 
-## Architecture
+### Problem Solved
+
+The system solves the problem of reliable payment webhook processing, avoiding:
+- Event duplication
+- Data loss during traffic peaks
+- Processing slowdowns
+- Communication failures between systems
+- Authentication and security issues
+
+## Objectives and Features
+
+### Main Objectives
+- **High Performance**: Fast processing with Redis cache
+- **Reliability**: Idempotency system prevents duplications
+- **Scalability**: Architecture prepared for vertical growth
+- **Security**: Robust authentication and token validation
+- **Flexibility**: Support for multiple payment providers
+- **Simplicity**: Minimalist API focused on functionality
+
+### Technical Features
+- **Guaranteed Idempotency**: Duplicate events are automatically ignored via redis
+- **Asynchronous Processing**: MongoDB queue for future processing
+- **Smart Cache**: RedisOver with configurable TTL and environment control
+- **Multi-environment**: Automatic configuration for local (no Redis authentication) and production (with credentials)
+- **Dynamic Configuration**: Environment variables organized by sections
+
+## System Architecture
+
+### Conceptual Diagram
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │  Payment APIs   ───▶   Webhook Server  ───▶    MongoDB       │
-│ (Asaas/Stripe)  │    │   (Node.js)     │    │   (Filas)       │
+│ (Asaas/Stripe)  │    │   (Node.js)     │    │   (Queues)      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
                               ▼
@@ -33,146 +64,359 @@ This project provides a robust webhook processing system designed specifically f
                        └─────────────────┘
 ```
 
-## Tech Stack
+### Data Flow
 
-- **Runtime**: Node.js (CommonJS)
-- **Framework**: Koa.js
-- **Database**: MongoDB 
-- **Cache**: Redis with RedisOver
-- **Security**: bcrypt, crypto-js
+1. **Reception**: Webhook receives event via POST `/asaas` or `/stripe`, and so on...
+2. **Validation**: System validates authentication token
+3. **Idempotency**: Redis checks if event has already been processed
+4. **Storage**: Event is saved in MongoDB queue for processing
+5. **Response**: Client receives immediate confirmation
 
-## Project Structure
+### Main Components
+
+#### 🔐 **Authentication System**
+- Validation via headers `asaas-access-token` and `stripe-access-token`
+- Tokens configured dynamically via database
+- Security middleware on all routes
+
+#### **Redis Cache (Idempotency)**
+- Uses **RedisOver** for advanced functionality
+- Stores unique keys per event (path + eventId)
+- Configurable TTL (default: 24h / 86400s)
+- Prevents duplicate event processing
+- Dynamic configuration between local and production environments
+
+#### **MongoDB Persistence**
+- Event queue for asynchronous processing
+- Dynamic collection configuration
+- Support for multiple databases
+
+#### **HTTP/HTTPS Server**
+- Koa.js framework for high performance
+- Automatic HTTP (development) and HTTPS (production) support
+- CORS configured for cross-origin integration
+
+## Technologies Used
+
+### Backend Core
+- **Node.js** - JavaScript Runtime (modules in **CommonJS**)
+- **Koa.js** - Web framework 
+- **RedisOver** - Advanced Redis Wrapper
+- **nodemon** (v3.1.9) - Auto-reload during development ( _Development only_ )
+
+### Databases
+- **MongoDB** - NoSQL database for persistence
+- **Redis** - In-memory cache for idempotency and state control
+
+### Security & Authentication
+- **bcrypt/bcryptjs** - Password hashing
+- **crypto-js** - Cryptography
+- **dotenv** - Environment variable management
+
+## How Redis Works (RedisOver)
+
+### RedisOver Integration
+The project uses **RedisOver** which offers:
+- 🔧 **Simplified configuration** for different environments
+- 🚀 **Advanced methods** like `parse()` for idempotency
+- 🛡️ **Automatic environment control** (local vs production)
+- 📦 **Automatic prefixes** for key organization
+
+```javascript
+// Example of RedisOver usage in this project
+const result = await global.redis.parse(
+  {
+    path: '/asaas'
+    event: 'PAYMENT_RECEIVED', 
+    eventId: 'unique-event-id' 
+  }, //keys
+  ctx.body, //value
+  86400 //ttl
+);
+/*
+  resultType {
+    created: boolean, 
+    key: string
+    value: any, 
+  }
+*/ 
+if (!result.created) {
+  // Event already processed - idempotency guaranteed
+  return { message: "Event already processed" };
+}
+```
+
+## File Structure
 
 ```
-webhook_payments_integrations/
-├── index.js                   # Application entry point
-├── package.json              # Dependencies and npm configuration
-├── README.md                 # Project documentation
-├── .env.example              # Environment configuration template
+webhook-template/
+├── 📄 index.js                 # Entry point - server configuration
+├── 📄 package.json             # Dependencies and npm configuration
+├── 📄 README.md               # Project documentation
+├── 📄 .env.example            # Configuration example
 │
-├── config/                   # System configuration
-│   ├── configServer.js       # Main server configuration
-│   └── custom-express.js     # Koa.js custom configuration
+├── 📂 config/                 # System configurations
+│   ├── configServer.js        # Main server configuration
+│   └── custom-express.js      # Custom Koa.js configuration
 │
-├── controllers/              # Business logic controllers
+├── 📂 controllers/            # Business logic controllers
 │   ├── asaas/
-│   │   └── hook.js          # Asaas webhook processing
+│   │   └── hook.js           # Asaas webhook processing
 │   └── stripe/
-│       └── hook.js          # Stripe webhook processing
+│       └── hook.js           # Stripe webhook processing
 │
-├── database/                 # Database connections
-│   ├── mongo.js             # MongoDB configuration
-│   └── redis.js             # Redis configuration
+├── 📂 database/               # Database connections
+│   ├── mongo.js              # MongoDB configuration
+│   ├── redis.js              # Redis configuration
+│   └── redisfromtsteste.js   # Redis tests
 │
-├── functions/                # Utility functions
-│   ├── createTimestamps.js  # Timestamp generation
-│   ├── getServerPort.js     # Port configuration
-│   └── validateToken.js     # Token validation
+├── 📂 functions/              # Utility functions
+│   ├── createTimestamps.js   # Timestamp generation
+│   ├── getServerPort.js      # Port configuration
+│   ├── getServiceConfigs.js  # Service configurations
+│   └── validateToken.js      # Token validation
 │
-├── scripts/                 # Automation scripts
-│   └── createToken.js       # Token creation system
+├── 📂 scripts/               # Automation scripts
+│   └── createToken.js        # Advanced token creation system
 │
-└── routes/                  # Route definitions
-    └── index.js             # Main router
+└── 📂 routes/                # Route definitions
+    └── index.js              # Main router
 ```
 
 
-## Environment Configuration
+## How It Works
 
-Create a `.env` file based on `.env.example`. If it does not exist, add the following variables as needed:
+### 1. Webhook Reception
+```javascript
+// POST /asaas
+{
+  "event": "PAYMENT_RECEIVED",
+  "id": "unique-event-id",
+  "payment": { /* payment data */ }
+}
 
-```env
-# Token Creation Configuration
-CREATE_IN_DB=true                    # Set to true to save tokens in the database
-MONGO_URI=mongodb://localhost:27017  # MongoDB connection string
-MONGO_DATABASE=webhooks              # Database name
-SUPPLIERS_TOKENS=suppliers_tokens    # Collection name for tokens
-
-# SQL Configuration (optional)
-# SQL_HOST=localhost
-# SQL_DATABASE=webhooks
-# SQL_USER=your_username
-# SQL_PWD=your_password
+// POST /stripe
+{
+  "type": "payment_intent.succeeded",
+  "id": "evt_unique-event-id",
+  "data": { /* payment data */ }
+}
 ```
 
-You can disable database storage for tokens (useful for testing) by setting:
-```env
-CREATE_IN_DB=false
+### 2. Security Validation
+- Verification of appropriate header (`access-token`)
+- Validation against tokens stored in the system
+
+### 3. Idempotency Verification
+
+**RedisOver** parse method checks and creates if necessary.
+
+```javascript
+// RedisOver generates unique key per provider with configurable prefix
+const key = await global.redis.parse({ 
+  path: 'asaas'
+  event: 'PAYMENT_RECEIVED', 
+  eventId: 'unique-event-id' 
+});
+
+// Resulting key: "${prefix}:path_asaas:event_PAYMENT_RECEIVED:eventId_unique-event-id"
 ```
 
+### 4. Processing
+- **If already processed**: Returns `200 OK` immediately
+- **If new**: Saves to MongoDB queue and creates Redis key
+- **If error**: Returns appropriate error with logs
 
-## Token Management
+### 5. Response
+```javascript
+// Success
+{ "error": false, "message": "Event created!" }
 
-This project includes an advanced token creation system that supports both MongoDB and SQL databases with automatic detection. Before using token generation, ensure your database schemas (Mongoose or SQL) are set up.
+// Already processed
+{ "error": false, "message": "Event received!" }
 
-### Token Creation Methods
+// Error
+{ "error": true, "message": "Error description" }
+```
 
-#### 1. Auto-Detection (Recommended)
-Automatically detects your database configuration and creates tokens accordingly:
+## Installation and Configuration
+
+### Prerequisites
+- Node.js >= 16.x
+- MongoDB >= 4.x
+- Redis >= 6.x
+
+### 1. Cloning and Dependencies
 ```bash
-# Auto-detect database and create token
+git clone [repository]
+cd webhook-template
+npm install
+```
+
+### 2. Environment Configuration
+Create a `.env` file based on `.env.example`:
+
+
+### 3. Token Creation System
+
+This project includes an advanced token creation system that automatically detects your database configuration and creates authentication tokens.
+
+#### Token Creation Script
+The `scripts/createToken.js` module offers several ways to create authentication tokens:
+
+```bash
+# Detects which database will be used 
 node -e "require('./scripts/createToken').auto()"
-```
-**How it works:**
-- Checks for MongoDB environment variables (`MONGO_URI`, `MONGO_DATABASE`, `SUPPLIERS_TOKENS`)
-- Checks for SQL environment variables (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PWD`)
-- Prefers MongoDB if both are configured
-- Falls back to memory-only generation if no database is configured
 
-#### 2. Force MongoDB Creation
-```bash
 # Force MongoDB token creation
 node -e "require('./scripts/createToken').mongo()"
-```
 
-#### 3. Force SQL Creation
-```bash
-# Force SQL token creation
+# Force SQL token creation (future implementation)
 node -e "require('./scripts/createToken').sql()"
-```
 
-#### 4. Memory-Only Generation
-```bash
-# Generate token without database storage
+# Generate token in memory only
 node -e "require('./scripts/createToken').generate()"
-```
 
-#### 5. Direct Script Execution
-```bash
-# Run the script directly (uses auto-detection)
+# Direct execution
 node scripts/createToken.js
 ```
 
-#### Legacy Configuration
-For backward compatibility, tokens can also be configured dynamically via the `getServiceConfigs()` function, which fetches settings from an external service.
+#### Environment Variables for Token Creation
 
+Check if `.env` received the correct structure as in `.env.example`
 
-## Token Format and Structure
+If not, add these to your `.env` file:
 
-**Generated Token Format:**
+```env
+# Token Creation Configuration
+CREATE_IN_DB=true                    # Set to true to save tokens in database
+MONGO_URI=mongodb://localhost:27017  # MongoDB connection string
+MONGO_DATABASE=webhook               # Database name
+SUPPLIERS_TOKENS=suppliers_tokens    # Collection name for tokens
+
+# SQL Configuration 
+# SQL_HOST=localhost
+# SQL_DATABASE=webhook
+# SQL_USERNAME=your_username
+# SQL_PWD=your_password
 ```
-{secret}:{database_id}
-```
-Example: `abc123def:674a2b1c8d9e3f4a5b6c7d8e`
 
-Where:
-- `abc123def` = Plain text secret (10 characters)
-- `674a2b1c8d9e3f4a5b6c7d8e` = Database record ID
+#### How Token Creation Works and Purpose
 
-**Database Storage:**
+The functioning and purpose of token creation are simple and straightforward:
 
-*MongoDB Document:*
+1. **Optimize**: Make authentication token creation for webhook systems more agile and simple.
+
+1. **Auto-Detection**: The script automatically detects which database is configured
+2. **Document Creation**: Creates a new document in MongoDB with bcrypt-hashed token
+3. **ID Generation**: Returns the MongoDB ObjectId for the created token
+4. **Token Format**: Returns the token in format `secret:objectId` (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
+
+#### Token Document Structure
 ```javascript
 {
   _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
-  token: "$2b$08$hashedTokenValue...",  // bcrypt hash of secret
+  token: "$2b$08$hashedValue...",  // bcrypt hash
   createdAt: Date,
   updatedAt: Date,
   active: true
 }
 ```
 
-*SQL Table Structure:*
+
+### 4. Legacy Token Configuration
+For compatibility with previous versions, tokens can still be configured dynamically via the `getServiceConfigs()` function that fetches configurations from an external service.
+
+#### Advanced Token Creation System
+
+The project includes an intelligent token creation system that supports MongoDB and SQL databases with automatic detection capabilities.
+
+##### Token Creation Methods
+
+**1. Auto-Detection (Recommended)**
+The system automatically detects your database configuration:
+
+```bash
+# Auto-detect database and create token
+node -e "require('./scripts/createToken').auto()"
+```
+
+**How it works:**
+- Checks MongoDB environment variables (`MONGO_URI`, `MONGO_DATABASE`, `SUPPLIERS_TOKENS`)
+- Checks SQL environment variables (`SQL_HOST`, `SQL_DATABASE`, `SQL_USER`, `SQL_PASSWORD`)
+- Prefers MongoDB if both databases are configured
+- Generates memory-only if no database is configured
+
+**2. Force MongoDB Creation**
+```bash
+# Force MongoDB creation
+node -e "require('./scripts/createToken').mongo()"
+```
+
+**3. Force SQL Creation**
+```bash
+# Force SQL database creation
+node -e "require('./scripts/createToken').sql()"
+```
+
+**4. Memory-Only Generation**
+```bash
+# Generate token without database storage
+node -e "require('./scripts/createToken').generate()"
+```
+
+**5. Direct Script Execution**
+```bash
+# Execute script directly (uses auto-detection)
+node scripts/createToken.js
+```
+
+##### Required Environment Variables
+
+**For MongoDB Support:**
+```env
+CREATE_IN_DB=true
+MONGO_URI=mongodb://localhost:27017
+MONGO_DATABASE=webhooks
+SUPPLIERS_TOKENS=suppliers_tokens
+```
+
+**For SQL Support:**
+```env
+CREATE_IN_DB=true
+SQL_HOST=localhost
+SQL_DATABASE=webhooks
+SQL_USER=your_username
+SQL_PASSWORD=your_password
+```
+
+##### Token Format and Structure
+
+**Generated Token Format:**
+```
+{secret}:{database_id}
+```
+
+**Example:** `abc123def:674a2b1c8d9e3f4a5b6c7d8e`
+
+Where:
+- `abc123def` = Plain text secret (10 characters)
+- `674a2b1c8d9e3f4a5b6c7d8e` = Database record ID
+
+##### Database Storage:
+
+**MongoDB Document:**
+```javascript
+{
+  _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
+  token: "$2b$08$hashedValue...",  // bcrypt hash of secret
+  createdAt: Date,
+  updatedAt: Date,
+  active: true
+}
+```
+
+**SQL Table Structure:**
 ```sql
 CREATE TABLE suppliers_tokens (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -183,12 +427,11 @@ CREATE TABLE suppliers_tokens (
 );
 ```
 
-
-## Usage Examples and Output
+##### Usage Examples and Output
 
 **Success Output Example:**
 ```json
-{
+{d
   "success": true,
   "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
   "secret": "abc123def",
@@ -211,21 +454,23 @@ CREATE TABLE suppliers_tokens (
 }
 ```
 
-### How to Use Generated Tokens
+##### How to Use Generated Tokens
 
 1. **Copy the token value** from the output (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
-2. **Use in webhook requests** as authentication header:
+
+2. **Use in webhook requests** as authentication headers:
    ```http
    POST /asaas
    Content-Type: application/json
    asaas-access-token: abc123def:674a2b1c8d9e3f4a5b6c7d8e
    ```
-3. **The system validates** by:
+
+3. **The system validates** through:
    - Extracting the secret part (`abc123def`)
-   - Finding the database record using the ID part (`674a2b1c8d9e3f4a5b6c7d8e`)
+   - Finding database record using the ID part (`674a2b1c8d9e3f4a5b6c7d8e`)
    - Comparing the bcrypt hash of the secret with stored hash
 
-### Token Validation Process
+##### Token Validation Process
 
 ```javascript
 // 1. Extract token parts
@@ -243,45 +488,68 @@ if (isValid && tokenRecord.active) {
 }
 ```
 
+##### Advanced Configuration
 
-## Advanced Configuration
-
-- **Disable Database Storage:**
-  ```env
-  CREATE_IN_DB=false
-  ```
-  When disabled, tokens are generated but not saved to the database (useful for testing).
-
-- **Multiple Database Support:**
-  If both MongoDB and SQL are configured, the system will:
-  1. Prefer MongoDB by default
-  2. Allow manual selection via specific methods
-  3. Provide clear indication of which database was used
-
-## API Endpoints
-
-### Webhook Endpoints
-
-```http
-POST /asaas
-POST /stripe
-POST /${anyother}
+**Disable Database Storage:**
+```env
+CREATE_IN_DB=false
 ```
+When disabled, tokens are generated but not saved to database (useful for testing).
 
-Any endpoint requires authentication via headers that may be setted up in webhooks settings via service panel that will be used. e.g:
+**Multiple Database Support:**
+If MongoDB and SQL are configured, the system will:
+1. Prefer MongoDB by default
+2. Allow manual selection via specific methods
+3. Provide clear indication of which database was used
 
-- `asaas-access-token` for Asaas webhooks
+#### How the Token System Works
+1. **Auto-Detection**: The script automatically detects which database is configured
+2. **Document Creation**: Creates a new document in MongoDB with bcrypt-hashed token
+3. **ID Generation**: Returns the MongoDB ObjectId for the created token
+4. **Token Format**: Returns token in format `secret:objectId` (e.g., `abc123def:674a2b1c8d9e3f4a5b6c7d8e`)
 
-Then add header's expected name in `index.js`
+#### Token Document Structure
 ```javascript
-  const tokenHeaders = [
-    "asaas-access-token"
-  ];
+{
+  _id: ObjectId("674a2b1c8d9e3f4a5b6c7d8e"),
+  token: "$2b$08$hashedValue...",  // bcrypt hash
+  createdAt: Date,
+  updatedAt: Date,
+  active: true
+}
 ```
 
-### Request/Response Examples
+#### Output Example
+```json
+{
+  "success": true,
+  "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
+  "secret": "abc123def",
+  "hashSecret": "$2b$08$...",
+  "tokenId": "674a2b1c8d9e3f4a5b6c7d8e",
+  "database": "MongoDB",
+  "savedToDatabase": true,
+  "timestamp": "2025-07-18T..."
+}
+```
 
-**Asaas Webhook Request:**
+### 5. Available Scripts
+```bash
+# Development (with auto-reload)
+npm run dev
+
+# Production
+npm start
+
+# Tests
+npm test
+```
+
+## Usage
+
+### Available Endpoints
+
+#### Asaas Webhook
 ```http
 POST /asaas
 Content-Type: application/json
@@ -299,87 +567,53 @@ asaas-access-token: your-token-here
 }
 ```
 
-**Success Response:**
-```json
+#### Stripe Webhook
+```http
+POST /stripe
+Content-Type: application/json
+stripe-access-token: your-token-here
+
 {
-  "error": false,
-  "message": "Event created!"
-}
-```
-
-**Duplicate Event Response:**
-```json
-{
-  "error": false,
-  "message": "Event received!"
-}
-```
-
-## How It Works
-
-### 1. Webhook Reception
-The system receives webhook events via POST requests to provider-specific endpoints.
-
-### 2. Security Validation
-- Validates authentication token in request headers
-- Checks token against stored credentials in database
-
-### 3. Idempotency Check
-Uses Redis to prevent duplicate processing:
-```javascript
-// Check if event already exists
-  const result = await global.redis.parse(
-    {
-      path: '/asaas'
-      event: 'PAYMENT_RECEIVED', 
-      eventId: 'unique-event-id' 
-    }, //keys
-    ctx.body, //value
-    86400 //ttl
-  );
-  /*
-    resultType {
-      created: boolean, 
-      key: string
-      value: any, 
+  "type": "payment_intent.succeeded",
+  "id": "evt_123456789",
+  "created": 1642262400,
+  "data": {
+    "object": {
+      "id": "pi_123456789",
+      "amount": 10000,
+      "status": "succeeded"
     }
-  */ 
-  if (!result.created) {
-    // Evento já processado - idempotência garantida
-    return { message: "Event received!" };
   }
+}
 ```
 
-### 4. Event Processing
-- Stores event metadata in Redis with TTL (24 hours)
-- Inserts complete event data into MongoDB queue
-- Returns immediate confirmation to webhook sender
+### Expected Responses
+- `200 OK` - Event successfully processed
+- `400 Bad Request` - Processing error
+- `401 Unauthorized` - Invalid or missing token
+- `500 Internal Server Error` - Internal server error
 
-### 5. Response Handling
-- **New Event**: `200 OK` with "Event created!"
-- **Duplicate**: `200 OK` with "Event received!"
-- **Error**: `500` with error details
+### Monitoring and Logs
+The system includes detailed logs for:
+- Requests received per route
+- Webhook processing time
+- Redis/RedisOver connection and status
+- Idempotency events (duplicates detected)
+- Errors and exceptions with stack trace
+- MongoDB connection status
 
-## Redis Integration with RedisOver
+## Contributing
 
-The project uses **RedisOver v1.1.1** for enhanced Redis functionality:
-
-### Key Features
-- Simplified configuration for different environments
-- JSON object storage with `setJSON()` and `getJSON()`
-- Automatic key prefixing for organization
-- TTL management with `expire()`
-- Environment-specific connection handling
-
-### Configuration
+### Environment Structure
 ```javascript
-// Development (local) - no authentication
+// Development (local) - Redis without authentication
 const config = {
-  prefix: process.env.MONGO_DATABASE
+  prefix: process.env.MONGO_DATABASE,
+  // options commented for local environment
 }
 
-// Production - with Redis credentials
-if (process.env.SERVER_MODE !== 'local') {
+// Production - Redis with full credentials
+if (process.env.NODE_ENV === 'production') {
   config.options = {
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
@@ -389,82 +623,26 @@ if (process.env.SERVER_MODE !== 'local') {
 }
 ```
 
-### Usage Example
+### Adding New Provider
 ```javascript
-// Store event with TTL
-await global.redis.setJSON(ctx.path, params);
-await global.redis.expire(ctx.path, 86400);
+// 1. Create controller in controllers/newprovider/hook.js
+module.exports = async (ctx) => {
+  // Provider-specific logic
+};
 
-// Check for existing event
-const existingEvent = await global.redis.get(ctx.path);
+// 2. Add route in routes/index.js
+const newprovider = require('../controllers/newprovider/hook.js');
+router.post('/newprovider', newprovider);
+
+// 3. Configure token in validation middleware
+const tokenHeaders = [
+  "asaas-access-token",
+  "stripe-access-token",
+  "newprovider-access-token"  // Add here
+];
 ```
 
-
-## Development Scripts
-
-```bash
-# Development with auto-reload
-npm run dev
-
-# Production
-npm start
-
-# Run tests
-npm test
-```
-
-## Database Collections
-
-### MongoDB Collections
-- `suppliers_tokens` - Authentication tokens
-- `asaas_queue` - Asaas webhook events queue
-- `stripe_queue` - Stripe webhook events queue
-
-### Redis Keys
-- Format: `{prefix}:{endpoint_path}`
-- Example: `webhooks:/asaas`
-- TTL: 86400 seconds (24 hours)
-
-## Contributing
-
-### Adding New Payment Provider
-
-1. **Create Controller**: Add new file in `controllers/newprovider/hook.js`
-2. **Add Route**: Register route in `routes/index.js`
-3. **Configure Authentication**: Add token header to validation middleware
-4. **Update Documentation**: Document the new provider
-
-### Code Standards
-- Use `async/await` for asynchronous operations
-- Implement consistent error handling
-- Follow CommonJS module system
-- Keep functions focused and small
-- Document significant changes
-
-## Security Considerations
-
-- All tokens are bcrypt hashed before storage
-- Environment variables for sensitive configuration
-- HTTPS support for production environments
-- Input validation on all webhook endpoints
-- Rate limiting considerations for production deployment
-
-## Production Deployment
-
-### SSL Configuration
-For HTTPS in production, configure certificates:
-```env
-CERTS_KEY=server.key
-CERTS_CERTIFICATION=server.crt
-CERTS_CABUNDLE=ca-bundle.crt
-CERTS_CACERTIFICATESERVICES=ca-services.crt
-```
-
-### Performance Optimization
-- Redis connection pooling
-- MongoDB connection optimization
-- Request/response compression
-- Monitoring and logging
+**Built for reliable and performant webhook processing**
 
 ## Author: Lucas Silva de Moraes - Full-stack Developer
 
@@ -588,7 +766,7 @@ webhook-template/
 - **Node.js** - Runtime JavaScript (modulos em **CommonJs**)
 - **Koa.js** - Framework web 
 - **RedisOver** - Wrapper Avançado para Redis
-- **nodemon** (v3.1.9) - Auto-reload durante desenvolvimento (_Apenas desenvolvimento_)
+- **nodemon** (v3.1.9) - Auto-reload durante desenvolvimento ( _Apenas desenvolvimento_ )
 
 ### Bancos de Dados
 - **MongoDB** - Banco NoSQL para persistência
