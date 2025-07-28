@@ -502,14 +502,14 @@ O sistema resolve o problema de processamento confiável de webhooks de pagament
 ### Diagrama Conceitual
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  APIs Pagamento │───▶│  Webhook Server │───▶│   MongoDB       │
+│ APIs de Pagamento ──▶  Webhook Server  ───▶    MongoDB       │
 │ (Asaas/Stripe)  │    │   (Node.js)     │    │   (Filas)       │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
                               ▼
                        ┌─────────────────┐
                        │     Redis       │
-                       │  (Idempotência) │
+                       │  (Idempotency)  │
                        └─────────────────┘
 ```
 
@@ -530,7 +530,7 @@ O sistema resolve o problema de processamento confiável de webhooks de pagament
 
 #### **Cache Redis (Idempotência)**
 - Utiliza **RedisOver** para funcionalidades avançadas
-- Armazena chaves únicas por evento (eventId + path) 
+- Armazena chaves únicas por evento (path + eventId) 
 - TTL configurável (padrão: 24h / 86400s)
 - Previne processamento duplicado de eventos
 - Configuração dinâmica entre ambientes local e produção
