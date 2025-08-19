@@ -9,10 +9,10 @@
     "dev": "nodemon index.js",
     "test": "echo \"No tests specified\" && exit 0",
 		"token": {
-			 "auto": "node -e "require('./scripts/createToken').auto()""
-				"mongo": "node -e "require('./scripts/createToken').mongo()""
-				"sql": "node -e "require('./scripts/createToken').sql()""
-				"generate": "node -e "require('./scripts/createToken').generate"" 
+			 "auto": "node -e \"require('./scripts/createToken').auto()\""
+				"mongo": "node -e \"require('./scripts/createToken').mongo()\""
+				"sql": "node -e \"require('./scripts/createToken').sql()\""
+				"generate": "node -e \"require('./scripts/createToken').generate\"" 
      },
   },
   "keywords": [
