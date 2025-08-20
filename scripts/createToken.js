@@ -21,7 +21,7 @@ require('dotenv').config();
 
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient } = require('mongodb');
 
 const canCreateInDB = process.env.CREATE_IN_DB === 'true';
 
@@ -36,7 +36,7 @@ const SQL_DATABASE = process.env.SQL_DATABASE;
 const SQL_USER = process.env.SQL_USERNAME;
 const SQL_PASSWORD = process.env.SQL_PWD;
 /**
- * Auto-detect database type based on environment variables
+  Auto-detect database type based on environment variables
  */
 function detectDatabaseType() {
   const hasMongoVars = MONGO_URI && DATABASE_NAME && COLLECTION_NAME;
@@ -55,7 +55,7 @@ function detectDatabaseType() {
 }
 
 /**
- * Generate random token and bcrypt hash
+  Generate random token and bcrypt hash
  */
 function generateToken() {
   const secret = crypto.randomBytes(5).toString('hex').slice(0, 10);
@@ -64,7 +64,7 @@ function generateToken() {
 }
 
 /**
- * Create token for MongoDB
+  Create token for MongoDB
  */
 async function mongo() {
   const { secret, hashSecret } = generateToken();
@@ -164,7 +164,7 @@ async function mongo() {
 }
 
 /**
- * Create token for SQL databases
+  Create token for SQL databases
  */
 async function sql() {
   const { secret, hashSecret } = generateToken();
@@ -283,7 +283,7 @@ async function sql() {
 }
 
 /**
- * Generate token in memory only
+  Generate token in memory only
  */
 function generate() {
   const { secret, hashSecret } = generateToken();
@@ -310,7 +310,7 @@ function generate() {
 }
 
 /**
- * Auto-detect database and create token
+  Auto-detect database and create token
  */
 async function auto() {
   const dbType = detectDatabaseType();
