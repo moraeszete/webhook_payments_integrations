@@ -15,12 +15,19 @@
 - [Objectives and Features](#objectives-and-features)
 - [How It Works](#how-it-works)
 - [Installation and Configuration](#installation-and-configuration)
+- [Recent Updates & New Features](#recent-updates--new-features)
 - [Usage](#usage)
 - [Contributing](#contributing)
 
 ## Project Description
 
 This is a **high-performance enterprise webhook system** developed in **Node.js** with **Redis** and **MongoDB** integration. The project was created specifically to process webhooks from payment platforms like **Asaas** and **Stripe**, ensuring idempotency, high availability, and efficient processing of financial events.
+
+### Latest Improvements (August 2025)
+- 🚀 **Advanced Token Management**: Multi-database token generation with auto-detection
+- 🔧 **Enhanced CLI Tools**: Complete command-line interface for token operations  
+- 🛠️ **Improved Reliability**: Fixed configuration issues and enhanced error handling
+- 📚 **Better Documentation**: Comprehensive setup guides and troubleshooting
 
 ### Problem Solved
 
@@ -42,11 +49,15 @@ The system solves the problem of reliable payment webhook processing, avoiding:
 - **Simplicity**: Minimalist API focused on functionality
 
 ### Technical Features
-- **Guaranteed Idempotency**: Duplicate events are automatically ignored via redis
+- **Guaranteed Idempotency**: Duplicate events are automatically ignored via Redis
 - **Asynchronous Processing**: MongoDB queue for future processing
 - **Smart Cache**: RedisOver with configurable TTL and environment control
 - **Multi-environment**: Automatic configuration for local (no Redis authentication) and production (with credentials)
 - **Dynamic Configuration**: Environment variables organized by sections
+- **Advanced Token Management**: Multi-database token generation with auto-detection
+- **CLI Token Operations**: Complete command-line interface for token management
+- **Multi-Database Support**: MongoDB and SQL database compatibility
+- **Enterprise Security**: Bcrypt-hashed token storage with validation system
 
 ## System Architecture
 
@@ -151,15 +162,18 @@ if (!result.created) {
 ```
 webhook-template/
 ├── 📄 index.js                 # Entry point - server configuration
-├── 📄 package.json             # Dependencies and npm configuration
-├── 📄 README.md               # Project documentation
+├── 📄 package.json             # Dependencies and npm scripts
+├── 📄 README.md               # Project documentation  
 ├── 📄 .env.example            # Configuration example
+├── 📄 CHANGELOG.md            # Version history and changes
+├── 📄 SETUP.md                # Detailed setup guide
 │
 ├── 📂 config/                 # System configurations
-│   ├── configServer.js        # Main server configuration
-│   └── custom-express.js      # Custom Koa.js configuration
+│   ├── configdbs.js           # Database connections setup
+│   └── custom-express.js      # Custom Express/Koa configuration
 │
 ├── 📂 controllers/            # Business logic controllers
+│   ├── hookTemplate.js        # Generic webhook template
 │   ├── asaas/
 │   │   └── hook.js           # Asaas webhook processing
 │   └── stripe/
@@ -167,14 +181,12 @@ webhook-template/
 │
 ├── 📂 database/               # Database connections
 │   ├── mongo.js              # MongoDB configuration
-│   ├── redis.js              # Redis configuration
-│   └── redisfromtsteste.js   # Redis tests
+│   └── redis.js              # Redis configuration
 │
 ├── 📂 functions/              # Utility functions
 │   ├── createTimestamps.js   # Timestamp generation
 │   ├── getServerPort.js      # Port configuration
-│   ├── getServiceConfigs.js  # Service configurations
-│   └── validateToken.js      # Token validation
+│   └── validateToken.js      # Token validation system
 │
 ├── 📂 scripts/               # Automation scripts
 │   └── createToken.js        # Advanced token creation system
@@ -533,17 +545,90 @@ If MongoDB and SQL are configured, the system will:
 }
 ```
 
-### 5. Available Scripts
+### 5. NPM Scripts
+
+#### Server Management
 ```bash
-# Development (with auto-reload)
+# Development (with auto-reload using nodemon)
 npm run dev
 
-# Production
+# Production server
 npm start
 
-# Tests
+# Run tests (placeholder)
 npm test
 ```
+
+#### Token Management System (New!)
+```bash
+# Auto-detect database and create token (recommended)
+npm run token:auto
+
+# Force MongoDB token creation
+npm run token:mongo
+
+# Force SQL token creation
+npm run token:sql
+
+# Generate token in memory only (for testing)
+npm run token:generate
+```
+
+#### Token Management Examples
+```bash
+# For first-time setup - automatically configures based on your .env
+npm run token:auto
+# Output: Creates token in detected database and returns authentication credentials
+
+# For MongoDB-only environments
+npm run token:mongo  
+# Output: Forces token creation in MongoDB regardless of other configurations
+
+# For development/testing without database
+npm run token:generate
+# Output: Returns token without storing in any database
+```
+
+## Recent Updates & New Features
+
+### 🚀 Version 1.0.0 - August 2025
+
+#### ✨ New Features Added
+
+**Advanced Token Management System**
+- 🔧 **Multi-Database Support**: Automatic detection of MongoDB and SQL configurations
+- 🎯 **Smart Auto-Detection**: Intelligently chooses the best database based on available environment variables
+- 🛠️ **CLI Token Operations**: Complete command-line interface for all token operations
+- 🔒 **Enhanced Security**: Bcrypt hashing with secure token validation
+
+**New NPM Scripts**
+- `npm run token:auto` - Auto-detects and creates tokens in the appropriate database
+- `npm run token:mongo` - Forces MongoDB token creation
+- `npm run token:sql` - Forces SQL database token creation  
+- `npm run token:generate` - Memory-only token generation for testing
+
+**Database Schema Improvements**
+- 📊 **MongoDB Collections**: Structured `suppliers_tokens` collection with proper indexing
+- 🗄️ **SQL Tables**: Auto-creation of `suppliers_tokens` table with optimized schema
+- 🔄 **Cross-Database Compatibility**: Seamless switching between database types
+
+**Environment Configuration Enhancements**
+- ✅ **Improved `.env.example`**: Comprehensive configuration examples for all environments
+- 🔧 **Variable Standardization**: Consistent naming convention across all configuration files
+- 📝 **Better Documentation**: Detailed setup guides and troubleshooting information
+
+#### 🛠️ Technical Improvements
+- **Fixed package.json syntax errors**: Removed trailing commas and corrected function calls
+- **Enhanced error handling**: Better validation and debugging information
+- **Streamlined architecture**: Simplified database connection management
+- **Performance optimizations**: Improved token generation and validation processes
+
+#### 📚 Documentation Updates
+- **SETUP.md**: Comprehensive setup and configuration guide
+- **CHANGELOG.md**: Detailed version history and changes
+- **README.md**: Updated with all new features and usage examples
+
+For detailed information about all changes, see [CHANGELOG.md](CHANGELOG.md) and [SETUP.md](SETUP.md).
 
 ## Usage
 

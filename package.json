@@ -11,7 +11,7 @@
     "token:auto": "node -e \"require('./scripts/createToken').auto()\"",
     "token:mongo": "node -e \"require('./scripts/createToken').mongo()\"",
     "token:sql": "node -e \"require('./scripts/createToken').sql()\"",
-    "token:generate": "node -e \"require('./scripts/createToken').generate\"",
+    "token:generate": "node -e \"require('./scripts/createToken').generate()\""
   },
   "keywords": [
     "webhook",
