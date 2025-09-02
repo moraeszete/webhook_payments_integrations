@@ -1,35 +1,31 @@
 
-module.exports = async (ctx) => {
+module.exports = async (req, res) => {
   const collQueue = await global.mongo.collection("asaas_queue")
 
   const params = {
-    event: ctx.body.event,
-    eventId: ctx.body.id,
-    // time:ctx.body.dateCreated.split(' '),
+    event: req.webhookBody.event,
+    eventId: req.webhookBody.id,
+    // time: req.webhookBody.dateCreated.split(' '),
   };
 
   try {
     // Check if the event already exists in Redis
-    const existingEvent = await global.redis.get(ctx.path);
+    const existingEvent = await global.redis.get(req.path);
     
     if (existingEvent) {
       // Event already exists, return duplicate response
-      ctx.status = 200;
-      ctx.body = { error: false, message: "Event received!" };
-      return;
+      return res.status(200).json({ error: false, message: "Event received!" });
     }
 
     // Store the event in Redis with TTL (86400 seconds = 24 hours)
-    await global.redis.setJSON(ctx.path, params);
-    await global.redis.expire(ctx.path, 86400);
+    await global.redis.setJSON(req.path, params);
+    await global.redis.expire(req.path, 86400);
 
     // Insert the event into MongoDB queue
-    const insert = await collQueue.insertOne(ctx.body);
+    const insert = await collQueue.insertOne(req.webhookBody);
     
     if (insert.insertedId) {
-      ctx.status = 200;
-      ctx.body = { error: false, message: "Event created!" };
-      return;
+      return res.status(200).json({ error: false, message: "Event created!" });
     } else {
       throw new Error("Failed to insert event into queue");
     }
@@ -37,11 +33,9 @@ module.exports = async (ctx) => {
   } catch (error) {
     console.error("Error processing webhook event:", error.message);
     
-    ctx.status = 500;
-    ctx.body = {
+    return res.status(500).json({
       error: true,
       message: "Error processing event",
-    };
-    return;
+    });
   }
 };

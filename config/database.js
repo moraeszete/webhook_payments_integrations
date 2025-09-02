@@ -1,6 +1,6 @@
 const mongodb = require('../database/mongo')
 const redisdb = require('../database/redis')
-const timestamps = require('../functions/createTimestamps')
+const timestamps = require('../utils/timestamps')
 
 // Mongo {connect(), getDb(), toObjectId()}
 // Redis {connect(), getDb()}
@@ -11,6 +11,7 @@ module.exports = async () => {
   await mongodb.connect()
   global.mongo = mongodb.getDb()
   console.log("MongoDB connected successfully")
+  
   // redis connection
   await redisdb.connect()
   global.redis = redisdb.getDb()

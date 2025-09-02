@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt')
-// you can crate new token usgin functions/createToken.js 
+// you can create new token using scripts/createToken.js 
 // which will update the token in the database
 module.exports = async (tokenValue) => {
   if (!tokenValue) {

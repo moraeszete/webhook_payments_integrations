@@ -2,19 +2,23 @@ const path = require('path')
 // This file is part of the Webhook Template project.
 const dotenv = require('dotenv')
 dotenv.config({ path: path.join(__dirname, '.env') })
-let server;
 
-const configdbs = require('./config/configdbs')
-// Importing the custom express configuration
+const database = require('./config/database')
+
+// Importing the Express app configuration
 async function main() {
-  await configdbs()
-  const app = require('./config/custom-express')
+  await database()
+  const app = require('./config/app')
 
-  app.listen(process.env.PORT, () => {
-    console.log(`Server is on port: ${process.env.PORT}`)
+  const port = process.env.PORT || 3000
+  
+  app.listen(port, () => {
+    console.log(`🚀 Webhook server is running on port: ${port}`)
+    console.log(`📍 Health check: http://localhost:${port}/health`)
   })
 }
 
-main()
-
-module.exports = server;
+main().catch(err => {
+  console.error('Failed to start server:', err)
+  process.exit(1)
+});

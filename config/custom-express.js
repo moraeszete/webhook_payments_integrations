@@ -1,67 +1,50 @@
-const Koa = require("koa");
-const cors = require("@koa/cors");
-const bodyParser = require("koa-bodyparser");
+const express = require("express");
+const corsMiddleware = require("../middleware/cors");
+const authMiddleware = require("../middleware/auth");
 
-const app = new Koa();
+// Import hooks
+const asaasHook = require("../hooks/asaas");
+const stripeHook = require("../hooks/stripe");
 
-app.use(cors());
-app.use(bodyParser());
+const app = express();
 
-const router = require("../routes");
-const validateToken = require("../functions/validateToken");
+// Middleware
+app.use(corsMiddleware);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use(async (ctx, next) => {
-  ctx.set(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  // ctx.set('Access-Control-Allow-Methods', 'POST')
-  ctx.set("Access-Control-Allow-Origin", "*");
-  ctx.set("Access-Control-Allow-Credentials", true);
-  await next();
+// Authentication middleware
+app.use(authMiddleware);
+
+// Routes
+app.post('/asaas', asaasHook);
+app.post('/stripe', stripeHook);
+
+// Health check route
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'Webhook server is running' 
+  });
 });
 
-app.use(async (ctx, next) => {
-  const splitRoute = ctx.path.split("/");
-  if (splitRoute[1] !== "static") {
-    console.log(ctx.path, "- Rota chamada");
-  }
-
-  const tokenHeaders = [
-    "asaas-access-token"
-  ];
-  const headerIsValid = tokenHeaders.find((token) => ctx.headers[token]);
-  // const mapping = exceptionRoutes.includes(ctx.path)
-  if (headerIsValid) {
-    const tokenValue = ctx.headers[headerIsValid];
-    const validationResult = await validateToken(tokenValue);
-    if (validationResult.error) {
-      ctx.status = 401;
-      ctx.body = {
-        error: true,
-        message: "Token de acesso inválido",
-      }
-      return;
-    }
-  } else if (!headerIsValid) {
-    ctx.status = 401;
-    ctx.body = {
-      error: true,
-      message: "Token de acesso não fornecido",
-    }
-  }
-  
-  ctx.body = {}
-  if(ctx.request.body.body) {
-    ctx.body = ctx.request.body.body 
-  } else {
-    ctx.body = ctx.request.body 
-  }
-
-  await next();
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: true,
+    message: "Route not found",
+    path: req.path
+  });
 });
 
-app.use(router.routes());
-app.use(router.allowedMethods());
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  res.status(500).json({
+    error: true,
+    message: "Internal server error"
+  });
+});
 
 module.exports = app;
