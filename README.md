@@ -443,7 +443,7 @@ CREATE TABLE suppliers_tokens (
 
 **Success Output Example:**
 ```json
-{d
+{
   "success": true,
   "token": "abc123def:674a2b1c8d9e3f4a5b6c7d8e",
   "secret": "abc123def",
