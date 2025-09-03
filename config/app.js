@@ -1,11 +1,17 @@
 const express = require('express');
-const corsMiddleware = require('../middleware/cors');
+const cors = require('cors');
 const authMiddleware = require('../middleware/auth');
 
 const app = express();
 
-// Apply CORS middleware
-corsMiddleware(app);
+// Apply CORS 
+app.use(cors(
+  {
+    origin: '*',
+    methods: ['POST'],
+    credentials: true
+  }
+));
 
 // Parse JSON bodies
 app.use(express.json());

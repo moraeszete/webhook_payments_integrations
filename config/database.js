@@ -13,9 +13,9 @@ module.exports = async () => {
   console.log("MongoDB connected successfully")
   
   // redis connection
-  await redisdb.connect()
-  global.redis = redisdb.getDb()
-  console.log("Redis connected successfully")
+  // await redisdb.connect()
+  // global.redis = redisdb.getDb()
+  // console.log("Redis connected successfully")
 
   global.timestamps = timestamps
   console.log("Timestamps utility initialized", global.timestamps.create())
