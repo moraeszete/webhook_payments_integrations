@@ -2,40 +2,56 @@
 module.exports = async (req, res) => {
   const collQueue = await global.mongo.collection("asaas_queue")
 
-  const params = {
-    event: req.webhookBody.event,
-    eventId: req.webhookBody.id,
-    // time: req.webhookBody.dateCreated.split(' '),
+  const eventData = {
+    event: req.body.event,
+    eventId: req.body.id,
+    path: req.path
   };
 
   try {
-    // Check if the event already exists in Redis
-    const existingEvent = await global.redis.get(req.path);
+    // Check idempotency using MongoDB TTL
+    const idempotencyResult = await global.idempotency.parse(
+      {
+        path: req.path,
+        event: req.body.event,
+        eventId: req.body.id
+      },
+      req.body,
+      86400 // TTL: 24 hours
+    );
     
-    if (existingEvent) {
-      // Event already exists, return duplicate response
-      return res.status(200).json({ error: false, message: "Event received!" });
+    if (!idempotencyResult.created) {
+      // Event already processed - return success response
+      return res.status(200).json({ 
+        error: false, 
+        message: "Event already processed (idempotent)" 
+      });
     }
 
-    // Store the event in Redis with TTL (86400 seconds = 24 hours)
-    await global.redis.setJSON(req.path, params);
-    await global.redis.expire(req.path, 86400);
-
     // Insert the event into MongoDB queue
-    const insert = await collQueue.insertOne(req.webhookBody);
+    const insert = await collQueue.insertOne({
+      ...req.body,
+      processedAt: new Date(),
+      idempotencyKey: idempotencyResult.key
+    });
     
     if (insert.insertedId) {
-      return res.status(200).json({ error: false, message: "Event created!" });
+      return res.status(200).json({ 
+        error: false, 
+        message: "Event created successfully!",
+        eventId: insert.insertedId
+      });
     } else {
       throw new Error("Failed to insert event into queue");
     }
     
   } catch (error) {
-    console.error("Error processing webhook event:", error.message);
+    console.error("Error processing Asaas webhook:", error.message);
     
     return res.status(500).json({
       error: true,
       message: "Error processing event",
+      details: error.message
     });
   }
 };

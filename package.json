@@ -1,7 +1,7 @@
 {
   "name": "webhook-template",
   "version": "1.0.0",
-  "description": "Sistema de processamento de webhooks com Node.js, Redis e MongoDB",
+  "description": "Sistema de processamento de webhooks com Node.js e MongoDB",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
@@ -16,7 +16,6 @@
   "keywords": [
     "webhook",
     "nodejs",
-    "redis",
     "mongodb",
     "asaas",
     "stripe"
@@ -32,7 +31,6 @@
     "express": "^4.21.2",
     "mongodb": "^6.17.0",
     "promise-mysql": "^5.2.0",
-    "redisover": "^1.1.13",
     "uid-generator": "^2.0.0"
   },
   "devDependencies": {

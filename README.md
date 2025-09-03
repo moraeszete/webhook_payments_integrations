@@ -1,12 +1,12 @@
 # Webhook Payments Integration System
 
-Sistema de processamento de webhooks para plataformas de pagamento com **Node.js**, **Redis** e **MongoDB**. Desenvolvido para processar webhooks do **Asaas**, **Stripe** e outros provedores com garantia de idempotência e alta performance.
+Sistema de processamento de webhooks para plataformas de pagamento com **Node.js** e **MongoDB**. Desenvolvido para processar webhooks do **Asaas**, **Stripe** e outros provedores com garantia de idempotência e alta performance usando MongoDB TTL.
 
 ## 🚀 Funcionalidades
 
 - **✅ Processamento de Webhooks**: Recebe e processa webhooks de pagamento
 - **🔒 Sistema de Autenticação**: Validação por tokens de acesso
-- **⚡ Idempotência**: Previne processamento duplicado usando Redis
+- **⚡ Idempotência**: Previne processamento duplicado usando MongoDB TTL
 - **📊 Persistência**: Armazena eventos no MongoDB para processamento assíncrono
 - **🛡️ Segurança**: Validação de tokens e headers obrigatórios
 - **📈 Health Check**: Monitoramento da saúde do sistema
@@ -34,14 +34,8 @@ cp .env.example .env
 PORT=3000
 
 # MongoDB
-MONGO_URL=mongodb://localhost:27017
-MONGO_DB=webhook_db
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
+MONGO_URI=mongodb://localhost:27017
+MONGO_DATABASE=webhooks
 
 # Tokens (Gerados automaticamente)
 ASAAS_ACCESS_TOKEN=
@@ -118,7 +112,7 @@ curl http://localhost:3000/health
 
 1. **Recebimento**: Webhook chega no endpoint apropriado
 2. **Autenticação**: Valida token no header da requisição
-3. **Idempotência**: Verifica no Redis se o evento já foi processado
+3. **Idempotência**: Verifica no MongoDB TTL se o evento já foi processado
 4. **Persistência**: Salva evento na fila do MongoDB para processamento
 5. **Resposta**: Retorna confirmação de recebimento
 
@@ -148,8 +142,7 @@ webhook-template/
 │   └── ports.js                # Configuração de portas
 │
 ├── 📂 database/                # Conexões com bancos
-│   ├── mongo.js                # MongoDB
-│   └── redis.js                # Redis
+│   └── mongo.js                # MongoDB
 │
 └── 📂 scripts/                 # Scripts de automação
     └── createToken.js          # Geração de tokens
@@ -169,8 +162,8 @@ module.exports = async (req, res) => {
   };
 
   try {
-    // Verificar idempotência com Redis
-    const result = await global.redis.parse(
+    // Verificar idempotência com MongoDB TTL
+    const result = await global.idempotency.parse(
       {
         path: req.path,
         event: eventData.event,
@@ -254,10 +247,6 @@ pm2 logs
 - Verifique se o MongoDB está rodando
 - Confirme a URL no arquivo `.env`
 
-**Erro de conexão com Redis:**
-- Verifique se o Redis está rodando
-- Confirme host/porta no arquivo `.env`
-
 **Token inválido:**
 - Execute `npm run token:auto` para gerar novos tokens
 - Verifique se o token está correto no header da requisição
@@ -267,4 +256,4 @@ pm2 logs
 
 ---
 
-**🎉 Sistema pronto para processar webhooks com alta performance e confiabilidade!**
+**🎉 Sistema pronto para processar webhooks com alta performance e confiabilidade usando MongoDB TTL!**
