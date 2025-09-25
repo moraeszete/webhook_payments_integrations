@@ -13,8 +13,8 @@ async function main() {
   const port = process.env.PORT || 3000
   
   app.listen(port, () => {
-    console.log(`🚀 Webhook server is running on port: ${port}`)
-    console.log(`📍 Health check: http://localhost:${port}/health`)
+    console.log(`Running on: ${port}`)
+    console.log(`Health check: http://localhost:${port}/health`)
   })
 }
 
