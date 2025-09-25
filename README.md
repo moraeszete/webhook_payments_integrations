@@ -50,13 +50,7 @@ O sistema inclui scripts automatizados para criação e gerenciamento de tokens:
 
 ```bash
 # Geração automática de token (detecta o banco configurado)
-npm run token:auto
-
-# Força geração no MongoDB
-npm run token:mongo
-
-# Força geração no SQL (futuro)
-npm run token:sql
+npm run token:create
 
 # Apenas gera token em memória (sem salvar)
 npm run token:generate
@@ -64,10 +58,8 @@ npm run token:generate
 
 ### Como Funcionam os Scripts
 
-1. **token:auto** - Detecta automaticamente se MongoDB ou SQL está configurado e cria o token no banco apropriado
-2. **token:mongo** - Força a criação do token no MongoDB (cria collection "tokens" se não existir)
-3. **token:sql** - Para implementação futura com banco SQL
-4. **token:generate** - Gera um token UUID e exibe no console (útil para testes)
+1. **token:create** - Criação do token no MongoDB (cria collection "tokens" se não existir)
+2. **token:generate** - Gera um token UUID e exibe no console (útil para testes)
 
 ## 🎯 Como Usar
 
@@ -138,8 +130,7 @@ webhook-template/
 │
 ├── 📂 utils/                   # Utilitários
 │   ├── validateToken.js        # Validação de tokens
-│   ├── timestamps.js           # Geração de timestamps
-│   └── ports.js                # Configuração de portas
+│   └── timestamps.js           # Geração de timestamps
 │
 ├── 📂 database/                # Conexões com bancos
 │   └── mongo.js                # MongoDB
@@ -230,7 +221,7 @@ npm run dev
 npm start
 
 # Gerar token automaticamente
-npm run token:auto
+npm run token:create
 
 # Verificar sintaxe
 node -c index.js
@@ -248,7 +239,7 @@ pm2 logs
 - Confirme a URL no arquivo `.env`
 
 **Token inválido:**
-- Execute `npm run token:auto` para gerar novos tokens
+- Execute `npm run token:create` para gerar novos tokens
 - Verifique se o token está correto no header da requisição
 
 **Webhook duplicado:**
@@ -257,3 +248,5 @@ pm2 logs
 ---
 
 **🎉 Sistema pronto para processar webhooks com alta performance e confiabilidade usando MongoDB TTL!**
+
+**Made by AI and reviewed by me**
