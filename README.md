@@ -61,6 +61,8 @@ npm run token:generate
 1. **token:create** - Criação do token no MongoDB (cria collection "tokens" se não existir)
 2. **token:generate** - Gera um token UUID e exibe no console (útil para testes)
 
+> **📌 Nota**: Para suporte a bancos SQL e auto-detecção de banco, consulte a [versão anterior do gerador de tokens](https://github.com/moraeszete/webhook_payments_integrations/tree/09b696b169f892be404adb3cc102ec2c83d7bfea) que inclui funções `token:auto` e `token:sql` com documentação completa.
+
 ## 🎯 Como Usar
 
 ### 1. Iniciar o Servidor
