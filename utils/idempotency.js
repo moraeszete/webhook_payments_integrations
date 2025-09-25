@@ -31,7 +31,7 @@ async function parseEvent(keys, payload, ttl = 86400) {
     };
     
     try {
-      const result = await idempotencyCollection.insertOne(document);
+      await idempotencyCollection.insertOne(document);
       
       // Successfully inserted - event is new
       return {
