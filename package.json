@@ -8,9 +8,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"No tests specified\" && exit 0",
-    "token:auto": "node -e \"require('./scripts/createToken').auto()\"",
-    "token:mongo": "node -e \"require('./scripts/createToken').mongo()\"",
-    "token:sql": "node -e \"require('./scripts/createToken').sql()\"",
+    "token:create": "node -e \"require('./scripts/createToken').mongo()\"",
     "token:generate": "node -e \"require('./scripts/createToken').generate()\""
   },
   "keywords": [

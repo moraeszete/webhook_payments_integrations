@@ -14,8 +14,7 @@ module.exports = async () => {
   // Initialize idempotency system
   await idempotency.initialize()
   global.idempotency = idempotency
-  console.log("✅ Idempotency system initialized")
 
   global.timestamps = timestamps
-  console.log("✅ Timestamps utility initialized", global.timestamps.create())
+  console.log("Timestamps utility initialized", global.timestamps.create())
 }
