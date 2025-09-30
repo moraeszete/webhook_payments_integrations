@@ -9,7 +9,7 @@ module.exports = async (tokenValue) => {
   const [secret, tokenId] = tokenValue.split(":");
   if (!secret || !tokenId) return { error: true, message: "Token inválido" }
 
-  // thats is cause in the database the token is stored as bcrypt hash
+  // this is because the token is stored as bcrypt hash in the database
   // and the tokenId is the ObjectId of the token
   const collTokens = await global.mongo.config(process.env.SUPPLIERS_TOKENS);
   const tokenFromDb = await collTokens.findOne(
