@@ -18,9 +18,15 @@ function getDb() {
 }
 
 function toObjectId(id) {
-  return new ObjectId(id.toString());
+  // create new if none provided
+  if (!id) return new ObjectId(); 
+  if (typeof id === 'string') return new ObjectId(id);
+  return undefined;
 }
 
+/**
+ * Methods used in ./config/database
+ */
 module.exports = {
   connect,
   getDb,

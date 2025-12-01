@@ -9,9 +9,9 @@ module.exports = async (tokenValue) => {
   const [secret, tokenId] = tokenValue.split(":");
   if (!secret || !tokenId) return { error: true, message: "Token inválido" }
 
-  // this is because the token is stored as bcrypt hash in the database
+  // this is because the token is stored as hash in the database
   // and the tokenId is the ObjectId of the token
-  const collTokens = await global.mongo.config(process.env.SUPPLIERS_TOKENS);
+  const collTokens = await global.mongo.collection(process.env.SUPPLIERS_TOKENS);
   const tokenFromDb = await collTokens.findOne(
     { _id: global.mongo.ObjectId(tokenId) },
     { projection: { token: 1 } }
@@ -28,5 +28,4 @@ module.exports = async (tokenValue) => {
   } catch (error) {
     return { error: true, message: "Erro ao comparar token" };
   }
-
-};
+}

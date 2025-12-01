@@ -16,14 +16,14 @@ require('dotenv').config();
 
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const { MongoClient } = require('mongodb');
+const { connect } = require('../database/mongo');
 
 const canCreateInDB = process.env.CREATE_IN_DB === 'true';
 
 // MongoDB environment variables
 const MONGO_URI = process.env.MONGO_URI;
-const DATABASE_NAME = process.env.MONGO_DATABASE;
-const COLLECTION_NAME = process.env.SUPPLIERS_TOKENS;
+const MONG_DATABASE = process.env.MONGO_DATABASE;
+const SUPPLIERS_TOKENS = process.env.SUPPLIERS_TOKENS;
 
 
 /*
@@ -35,90 +35,78 @@ function generateToken() {
   return { secret, hashSecret };
 }
 
-/*
- * Create token for MongoDB
+/**
+ * Create token and save to mongo, logging results and saving log
+ * @returns { object } returns object inserted onde log collection and the token;
  */
 async function mongo() {
+
   const { secret, hashSecret } = generateToken();
 
-  const completeObject = {
+  let completeObject = {
     success: !canCreateInDB,
-    token: `${secret}:PENDING_ID`,
-    secret,
-    hashSecret,
     tokenId: 'PENDING_ID',
-    database: 'MongoDB',
     savedToDatabase: false,
     timestamp: new Date().toISOString()
   };
 
   if (!canCreateInDB) {
-    console.warn('Database creation disabled.');
-    if (process.argv.includes('-e')) { // -e flag to output complete JSON
-      console.log(JSON.stringify(completeObject, null, 2));
-    }
+    console.warn(`Database creation disabled.`);
     return completeObject;
   }
 
   // Validate environment variables
-  if (!MONGO_URI || !DATABASE_NAME || !COLLECTION_NAME) {
+  if (!MONGO_URI || !MONG_DATABASE || !SUPPLIERS_TOKENS) {
     const missingVars = [];
+
     if (!MONGO_URI) missingVars.push('MONGO_URI');
-    if (!DATABASE_NAME) missingVars.push('MONGO_DATABASE');
-    if (!COLLECTION_NAME) missingVars.push('SUPPLIERS_TOKENS');
+    if (!MONG_DATABASE) missingVars.push('MONGO_DATABASE');
+    if (!SUPPLIERS_TOKENS) missingVars.push('SUPPLIERS_TOKENS');
 
     const errorResult = {
       ...completeObject,
-      success: false,
-      error: `Missing required environment variables: ${missingVars.join(', ')}`,
+      error: true,
+      message: `Missing required environment variables: ${missingVars.join(', ')}`,
       missingVariables: missingVars
     };
 
     console.error('Missing environment variables:', missingVars.join(', '));
-    if (process.argv.includes('-e')) {
-      console.log(JSON.stringify(errorResult, null, 2));
-    }
+
     return errorResult;
   }
 
   try {
-    const client = new MongoClient(MONGO_URI);
-    await client.connect();
-
-    const db = client.db(DATABASE_NAME);
-    const collTokens = db.collection(COLLECTION_NAME);
+    const mongoConnection = await connect(); // use mongo internal utils
+    const collTokens = mongoConnection.collection(SUPPLIERS_TOKENS);
+    const collLog = mongoConnection.collection(`token_creation_log`);
 
     // Insert new token document
-    const tokenDoc = {
+    const tokenObj = {
       token: hashSecret,
       createdAt: new Date(),
       updatedAt: new Date(),
       active: true
     };
 
-    const result = await collTokens.insertOne(tokenDoc);
-    const insertedId = result.insertedId.toString();
+    const result = await collTokens.insertOne(tokenObj);
+    let insertedId = result.insertedId.toString();
 
     // Update complete object with generated ID
     completeObject.success = true;
     completeObject.savedToDatabase = true;
     completeObject.tokenId = insertedId;
-    completeObject.token = `${secret}:${insertedId}`;
-    completeObject.mongoResult = {
-      acknowledged: result.acknowledged,
-      insertedId: insertedId
-    };
 
     console.warn('Token created successfully in MongoDB');
     console.warn(`Authentication token: ${secret}:${insertedId}`);
     console.warn(`Generated token ID: ${insertedId}`);
 
-    await client.close();
+    // Insert log for created tokens 
+    insertedId = (await collLog.insertOne(completeObject)).insertedId.toString();
 
-    if (process.argv.includes('-e')) {
-      console.log(JSON.stringify(completeObject, null, 2));
-    }
-    return completeObject;
+    return {
+      ...completeObject,
+      token: `${secret}:${insertedId}`,
+    };
   } catch (error) {
     const errorResult = {
       ...completeObject,
@@ -128,9 +116,7 @@ async function mongo() {
     };
 
     console.error('Error creating token in MongoDB:', error.message);
-    if (process.argv.includes('-e')) {
-      console.log(JSON.stringify(errorResult, null, 2));
-    }
+
     return errorResult;
   }
 }
@@ -154,9 +140,6 @@ function generate() {
     note: 'Generated in memory only'
   };
 
-  if (process.argv.includes('-e')) {
-    console.log(JSON.stringify(completeObject, null, 2));
-  }
   console.warn('Token generated in memory only');
   console.warn(JSON.stringify(completeObject, null, 2));
   return completeObject;
@@ -171,11 +154,11 @@ if (require.main === module) {
   (async () => {
     console.warn('Running createToken directly...');
     console.warn('CLI Usage examples:');
-    console.warn('node -e "require(\'./scripts/createToken\').create()"');
+    console.warn('node -e "require(\'./scripts/createToken\').mongo()"');
     console.warn('node -e "require(\'./scripts/createToken\').generate()"');
     console.warn('');
 
-    const result = await create();
+    const result = await mongo();
     process.exit(result.success ? 0 : 1);
   })();
 }

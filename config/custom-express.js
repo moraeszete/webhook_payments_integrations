@@ -1,5 +1,5 @@
 const express = require("express");
-const corsMiddleware = require("../middleware/cors");
+const corsMiddleware = require("../middleware/cors"); // Not implemented yet
 const authMiddleware = require("../middleware/auth");
 
 // Import hooks

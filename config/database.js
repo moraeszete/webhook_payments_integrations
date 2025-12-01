@@ -7,8 +7,8 @@ const idempotency = require('../utils/idempotency')
 
 module.exports = async () => {
   // MongoDB connection
-  await mongodb.connect()
-  global.mongo = mongodb.getDb()
+  const db = await mongodb.connect()
+  global.mongo = db
   console.log("MongoDB connected !")
   
   // Initialize idempotency system

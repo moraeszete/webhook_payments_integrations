@@ -2,20 +2,15 @@
 module.exports = async (req, res) => {
   const collQueue = await global.mongo.collection("asaas_queue")
 
-  const eventData = {
-    event: req.body.event,
-    eventId: req.body.id,
-    path: req.path
-  };
-
   try {
+    let eventData = {
+      event: req.body.event,
+      eventId: req.body.id,
+      path: req.path
+    };
     // Check idempotency using MongoDB TTL
     const idempotencyResult = await global.idempotency.parse(
-      {
-        path: req.path,
-        event: req.body.event,
-        eventId: req.body.id
-      },
+      eventData,
       req.body,
       86400 // TTL: 24 hours
     );
