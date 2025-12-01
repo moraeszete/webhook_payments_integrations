@@ -1,4 +1,4 @@
-function pad (n) {
+function pad(n) {
   return +n < 10 ? '0' + +n : +n
 }
 module.exports = {
@@ -9,10 +9,10 @@ module.exports = {
   */
   create: async function () {
     const createdAt = new Date()
+    const createdAtPosix = Date.now()
     const createdAtOnlyDate = createdAt.toLocaleDateString('pt-br')
     const createdAtIntl = createdAt.toISOString().split('T')[0]
     const createdAtLocale = createdAt.toLocaleDateString("pt-BR") + ' ' + pad(createdAt.getHours()) + ':' + pad(createdAt.getMinutes()) + ':' + pad(createdAt.getSeconds())
-    const createdAtPosix = Date.now()
     const weekDay = this.getWeekdayFromDay(createdAt.getDay())
     const month = this.getMonthFromMonth(createdAt.getMonth())
     const year = createdAt.getFullYear()
@@ -29,7 +29,7 @@ module.exports = {
       createdAtIntl
     }
   },
-  getWeekdayFromDay (day) {
+  getWeekdayFromDay(day) {
     const arrDays = {
       long: [
         'Domingo',
@@ -52,7 +52,7 @@ module.exports = {
     }
     return { long: arrDays.long[day], short: arrDays.short[day] }
   },
-  getMonthFromMonth (month) {
+  getMonthFromMonth(month) {
     const arrMonths = {
       long: [
         'Janeiro',
@@ -85,12 +85,12 @@ module.exports = {
     }
     return { long: arrMonths.long[month], short: arrMonths.short[month] }
   },
-  getWeekOfYear (date) {
-    const oneJan = new Date(date.getFullYear(), 0, 1)
-    const numberOfDays = Math.floor((date - oneJan) / (24 * 60 * 60 * 1000))
-    return Math.ceil(( date.getDay() + 1 + numberOfDays) / 7)
+  getWeekOfYear(date) {
+    const janFirst = new Date(date.getFullYear(), 0, 1)
+    const numberOfDays = Math.floor((date - janFirst) / (24 * 60 * 60 * 1000))
+    return Math.ceil((date.getDay() + 1 + numberOfDays) / 7)
   },
-  createDateAndDateLocale ({ date, inputFormat }) {
+  createDateAndDateLocale({ date, inputFormat }) {
     let dateLocale
     let dateIntl
     let year
@@ -126,17 +126,17 @@ module.exports = {
       }
     }
     const dayOfWeek = this.getWeekdayFromDay(date.getDay())
-    return { date, dateLocale, dateIntl, dayOfWeek, year}
+    return { date, dateLocale, dateIntl, dayOfWeek, year }
   },
-  getDateOptions () {
+  getDateOptions() {
     const dates = []
     let date = new Date()
 
-    for(let i = 0; i < 6; i++) {
-      dates.push(date.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric'}))
-      date.setMonth(date.getMonth() -1)
+    for (let i = 0; i < 6; i++) {
+      dates.push(date.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }))
+      date.setMonth(date.getMonth() - 1)
     }
     return dates
   }
-  
+
 }

@@ -41,3 +41,6 @@ coverage/
 # Build outputs
 dist/
 build/
+
+#Development Api
+api/

@@ -83,7 +83,6 @@ async function initializeIdempotencyIndexes() {
       { unique: true }
     );
     
-    console.log("Indexes initialized !");
     
   } catch (error) {
     // Index might already exist, which is fine
