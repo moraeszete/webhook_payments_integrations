@@ -14,12 +14,12 @@ module.exports = async (req, res) => {
       req.body,
       86400 // TTL: 24 hours
     );
-    
+
     if (!idempotencyResult.created) {
       // Event already processed - return success response
-      return res.status(200).json({ 
-        error: false, 
-        message: "Event already processed (idempotent)" 
+      return res.status(200).json({
+        error: false,
+        message: "Event already processed (idempotent)"
       });
     }
 
@@ -29,20 +29,20 @@ module.exports = async (req, res) => {
       processedAt: new Date(),
       idempotencyKey: idempotencyResult.key
     });
-    
+
     if (insert.insertedId) {
-      return res.status(200).json({ 
-        error: false, 
+      return res.status(200).json({
+        error: false,
         message: "Event created successfully!",
         eventId: insert.insertedId
       });
     } else {
       throw new Error("Failed to insert event into queue");
     }
-    
+
   } catch (error) {
     console.error("Error processing Asaas webhook:", error.message);
-    
+
     return res.status(500).json({
       error: true,
       message: "Error processing event",

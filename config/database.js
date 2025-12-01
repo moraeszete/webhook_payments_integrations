@@ -9,12 +9,12 @@ module.exports = async () => {
   // MongoDB connection
   const db = await mongodb.connect()
   global.mongo = db
-  
+
   // Initialize idempotency system
   await idempotency.initialize()
   global.idempotency = idempotency
 
   global.timestamps = timestamps
-  
+
   console.log("Utilities initialized", await global.timestamps.create())
 }

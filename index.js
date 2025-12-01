@@ -11,7 +11,7 @@ async function main() {
   const app = require('./config/app')
 
   const port = process.env.PORT || 3000
-  
+
   app.listen(port, () => {
     console.log(`Running on: ${port}`)
     console.log(`Health check: http://localhost:${port}/health`)

@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt')
 // you can create new token using scripts/createToken.js 
 // which will update the token in the database
 module.exports = async (tokenValue) => {
-  if (!tokenValue)  return { error: true, message: "Token não enviado" }
+  if (!tokenValue) return { error: true, message: "Token não enviado" }
 
   // the token received from header should be secret:tokenId
   // example: 1234567890abcdef:60c72b2f9b
