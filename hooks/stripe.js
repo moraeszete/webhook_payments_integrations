@@ -5,27 +5,27 @@
 
 module.exports = async (req, res) => {
   const collQueue = await global.mongo.collection("stripe_queue");
+  let eventData = {
+    path: req.path,
+    event: req.body.type,
+    eventId: req.body.id
+  }
+  // Check idempotency using MongoDB TTL
+  const idempotencyResult = await global.idempotency.parse(
+    eventData,
+    req.body,
+    86400 // TTL: 24 hours
+  );
+
+  if (!idempotencyResult.created) {
+    // Event already processed - return success response
+    return res.status(200).json({
+      error: false,
+      message: "Event already processed (idempotent)"
+    });
+  }
+
   try {
-    let eventData = {
-      path: req.path,
-      event: req.body.type,
-      eventId: req.body.id
-    }
-    // Check idempotency using MongoDB TTL
-    const idempotencyResult = await global.idempotency.parse(
-      eventData,
-      req.body,
-      86400 // TTL: 24 hours
-    );
-
-    if (!idempotencyResult.created) {
-      // Event already processed - return success response
-      return res.status(200).json({
-        error: false,
-        message: "Event already processed (idempotent)"
-      });
-    }
-
     // Insert the event into MongoDB queue
     const insert = await collQueue.insertOne({
       ...req.body,
@@ -39,13 +39,10 @@ module.exports = async (req, res) => {
         message: "Stripe event processed successfully!",
         eventId: insert.insertedId
       });
-    } else {
-      throw new Error("Failed to insert Stripe event into queue");
     }
+    throw new Error("Failed to insert Stripe event into queue");
 
   } catch (error) {
-    console.error("Error processing Stripe webhook:", error.message);
-
     return res.status(500).json({
       error: true,
       message: "Error processing Stripe event",

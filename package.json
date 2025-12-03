@@ -8,8 +8,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"No tests specified\" && exit 0",
-    "token:create": "node -e \"require('./scripts/createToken').mongo()\"",
-    "token:generate": "node -e \"require('./scripts/createToken').generate()\""
+    "token": "node ./scripts/createToken.js"
   },
   "keywords": [
     "webhook",

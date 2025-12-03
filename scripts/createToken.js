@@ -18,13 +18,15 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { connect } = require('../database/mongo');
 
+/**
+ * Config for when to create token in DB
+ */
 const canCreateInDB = process.env.CREATE_IN_DB === 'true';
 
 // MongoDB environment variables
 const MONGO_URI = process.env.MONGO_URI;
 const MONG_DATABASE = process.env.MONGO_DATABASE;
 const SUPPLIERS_TOKENS = process.env.SUPPLIERS_TOKENS;
-
 
 /*
  * Generate random token and bcrypt hash
@@ -145,20 +147,26 @@ function generate() {
   return completeObject;
 }
 
+function main() {
+  if (canCreateInDB) {
+    return mongo();
+  }
+  return generate();
+}
+
+if (require.main === module) {
+  main()
+    .then( () => {
+      process.exit(0);
+    })
+    .catch(error => {
+      console.error('\nScript failed:', error);
+      process.exit(1);
+    });
+}
+
 module.exports = {
+  main,
   mongo,
   generate,
 };
-
-if (require.main === module) {
-  (async () => {
-    console.warn('Running createToken directly...');
-    console.warn('CLI Usage examples:');
-    console.warn('node -e "require(\'./scripts/createToken\').mongo()"');
-    console.warn('node -e "require(\'./scripts/createToken\').generate()"');
-    console.warn('');
-
-    const result = await mongo();
-    process.exit(result.success ? 0 : 1);
-  })();
-}

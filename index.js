@@ -1,7 +1,4 @@
-const path = require('path')
-// This file is part of the Webhook Template project.
-const dotenv = require('dotenv')
-dotenv.config({ path: path.join(__dirname, '.env') })
+require('dotenv').config();
 
 const database = require('./config/database')
 

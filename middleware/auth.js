@@ -1,5 +1,5 @@
 const validateToken = require("../utils/validateToken");
-
+const tokenHeaders = require("./headerTokens");
 /**
  * Authentication middleware for Express
  * Validates tokens from specific headers
@@ -11,10 +11,6 @@ module.exports = async (req, res, next) => {
   if (splitRoute[1] === "health") {
     return next()
   }
-
-  const tokenHeaders = [
-    "asaas-access-token"
-  ];
 
   const headerIsValid = tokenHeaders.find((token) => req.headers[token]);
 
@@ -33,13 +29,6 @@ module.exports = async (req, res, next) => {
       error: true,
       message: "Token de acesso inválido",
     });
-  }
-
-  // Process body for webhook compatibility
-  if (req.body.body) {
-    req.webhookBody = req.body.body;
-  } else {
-    req.webhookBody = req.body;
   }
 
   return next();
