@@ -51,17 +51,23 @@ O sistema inclui scripts automatizados para criação e gerenciamento de tokens:
 ### Scripts Disponíveis
 
 ```bash
-# Geração automática de token (detecta o banco configurado)
-npm run token:create
-
-# Apenas gera token em memória (sem salvar)
-npm run token:generate
+# Geração de token (MongoDB ou memória, conforme configuração)
+npm run token
 ```
 
-### Como Funcionam os Scripts
+### Como Funciona o Script
 
-1. **token:create** - Criação do token no MongoDB (cria collection "tokens" se não existir)
-2. **token:generate** - Gera um token UUID e exibe no console (útil para testes)
+O script `npm run token` automaticamente:
+- Cria o token no **MongoDB** se `CREATE_IN_DB=true` no `.env`
+- Gera o token apenas em **memória** se `CREATE_IN_DB=false` ou não definido
+
+Para uso programático:
+```javascript
+const tokenModule = require('./scripts/createToken');
+await tokenModule.main();      // Segue configuração CREATE_IN_DB
+await tokenModule.mongo();     // Força criação no MongoDB
+const token = tokenModule.generate(); // Apenas memória
+```
 
 > **📌 Nota**: Para suporte a bancos SQL e auto-detecção de banco, consulte a [versão anterior do gerador de tokens](https://github.com/moraeszete/webhook_payments_integrations/tree/09b696b169f892be404adb3cc102ec2c83d7bfea) que inclui funções `token:auto` e `token:sql` com documentação completa.
 
@@ -225,7 +231,7 @@ npm run dev
 npm start
 
 # Gerar token automaticamente
-npm run token:create
+npm run token
 
 # Verificar sintaxe
 node -c index.js
