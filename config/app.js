@@ -1,15 +1,16 @@
 const express = require("express");
-const cors = require('cors');
-const router = require("./router")
 const app = express();
 
-const authMiddleware = require("../middleware/auth");
+const cors = require('cors');
+const router = require("./router")
+
+const authMiddleware = require("../middlewares/auth");
 
 // Apply CORS s
 app.use(cors(
   {
     origin: '*',
-    methods: ['POST'],
+    methods: ['POST', 'GET', 'PUT'],
     credentials: true
   }
 ));

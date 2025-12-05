@@ -22,14 +22,14 @@ module.exports = async (req, res, next) => {
   }
 
   const tokenValue = req.headers[headerIsValid];
-  const validationResult = await validateToken(tokenValue);
+  // const validationResult = await validateToken(tokenValue);
 
-  if (validationResult.error) {
-    return res.status(401).json({
-      error: true,
-      message: "Token de acesso inválido",
-    });
-  }
+  // if (validationResult.error) {
+  //   return res.status(401).json({
+  //     error: true,
+  //     message: "Token de acesso inválido",
+  //   });
+  // }
 
   return next();
 };

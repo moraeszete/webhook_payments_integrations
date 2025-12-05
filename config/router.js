@@ -1,10 +1,6 @@
 const { Router } = require("express")
 const router = Router()
 
-// Import hooks
-const asaasHook = require("../hooks/asaas");
-const stripeHook = require("../hooks/stripe");
-
 // Routes
 router.post('/asaas', asaasHook);
 router.post('/stripe', stripeHook);
