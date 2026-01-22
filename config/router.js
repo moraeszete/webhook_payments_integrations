@@ -2,8 +2,7 @@ const { Router } = require("express")
 const router = Router()
 
 // Routes
-router.post('/asaas', asaasHook);
-router.post('/stripe', stripeHook);
+router.post('/config/new', require('../api/company/config'));
 
 // Health check route
 router.get('/health', (req, res) => {

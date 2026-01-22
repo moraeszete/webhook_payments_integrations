@@ -1,5 +1,5 @@
-const validateToken = require("../utils/validateToken");
-const tokenHeaders = require("./headerTokens");
+const validateToken = require("../utils/tokenGen");
+
 /**
  * Authentication middleware for Express
  * Validates tokens from specific headers
@@ -12,8 +12,7 @@ module.exports = async (req, res, next) => {
     return next()
   }
 
-  const headerIsValid = tokenHeaders.find((token) => req.headers[token]);
-
+  const headerIsValid = await validateToken.verifyToken(req.auth.token)
   if (!headerIsValid) {
     return res.status(401).json({
       error: true,
@@ -21,7 +20,6 @@ module.exports = async (req, res, next) => {
     });
   }
 
-  const tokenValue = req.headers[headerIsValid];
   // const validationResult = await validateToken(tokenValue);
 
   // if (validationResult.error) {
